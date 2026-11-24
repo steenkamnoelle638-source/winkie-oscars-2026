@@ -161,7 +161,7 @@ async function renderResultsData() {
     container.innerHTML = categoryMarkup(results) + overallMarkup(results);
     document.querySelector("#reveal-button")?.addEventListener("click", () => {
       const winnersSection = document.querySelector(".overall-after");
-      winnersSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+      winnersSection?.scrollIntoView({ behavior: "instant", block: "start" });
       window.setTimeout(() => startReveal(results.overall.slice(0, 3)), 750);
     });
   } catch (error) { state.adminToken = ""; sessionStorage.removeItem("adminToken"); render(); }
