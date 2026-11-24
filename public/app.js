@@ -158,10 +158,16 @@ async function renderResultsData() {
   try {
     const results = await api("/api/results", { headers: { "x-admin-token": state.adminToken } });
     container.innerHTML = categoryMarkup(results) + overallMarkup(results);
-    document.querySelector("#reveal-button")?.addEventListener("click", () => {
+    const revealButton = document.querySelector("#reveal-button");
+    revealButton?.addEventListener("click", () => {
       const winnersSection = document.querySelector(".overall-after");
+      const revealStage = document.querySelector("#reveal-stage");
+      if (!winnersSection || !revealStage) return;
+      revealButton.disabled = true;
       winnersSection?.scrollIntoView({ behavior: "instant", block: "start" });
-      window.setTimeout(() => startReveal(results.overall.slice(0, 3)), 750);
+      revealStage.classList.add("curtains-open");
+      const curtainDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1500;
+      window.setTimeout(() => startReveal(results.overall.slice(0, 3)), curtainDuration);
     });
   } catch (error) { state.adminToken = ""; sessionStorage.removeItem("adminToken"); render(); }
 }
@@ -171,7 +177,7 @@ function startReveal(top) {
   let step = 0;
   const show = () => {
     const result = top[step === 1 ? 2 : step === 2 ? 1 : 0];
-    stage.className = `reveal-stage reveal-${step}`;
+    stage.className = `reveal-stage reveal-${step} curtains-open`;
     stage.querySelector(".reveal-content").innerHTML = step === 0 ? `<span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Die kamer hou asem op…</p>` : `<span class="reveal-place">${step === 1 ? "THIRD PLACE" : step === 2 ? "SECOND PLACE" : "AND THE WINNER IS"}</span><div class="reveal-person"><div class="reveal-photo">${photo(result.participant)}</div><div><span class="reveal-number">0${step === 1 ? 3 : step === 2 ? 2 : 1}</span><h2>${escapeHtml(result.participant.name)}</h2><p>${result.score} punte oor al die vrae</p></div></div>`;
     stage.querySelectorAll(".reveal-dots i").forEach((dot, index) => dot.classList.toggle("on", index < step));
   };
