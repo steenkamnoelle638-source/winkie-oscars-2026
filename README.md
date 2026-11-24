@@ -17,6 +17,10 @@ npm start
 
 Vir outomatiese herlaai tydens ontwikkeling, gebruik `npm run dev`.
 
+## GitHub Pages
+
+Die Pages-tuisblad is die wortel-lêer `index.html`; GitHub Pages bedien nie die Node/SQLite-bediener nie. Op die Pages-skakel gebruik die demonstrasie dus `localStorage`: stemme en ranglyste bly net in daardie blaaier/toestel, en die demo-admin-wagwoord is nie sekuriteit nie. Dit laat die ontwerp en al vier bladsye werk, maar versamel nie ’n gedeelde groepstem nie. Vir stemme wat tussen almal se toestelle gedeel word, moet `server.js` op ’n Node-host loop met ’n duursame SQLite-lêer; GitHub Pages alleen kan dit nie doen nie.
+
 ## Wat ingesluit is
 
 - Die tuis-/reëlsblad met naamkeuse, die twee host-portrette en ’n bevestiging dat die reëls gelees is.
