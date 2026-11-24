@@ -159,7 +159,11 @@ async function renderResultsData() {
   try {
     const results = await api("/api/results", { headers: { "x-admin-token": state.adminToken } });
     container.innerHTML = categoryMarkup(results) + overallMarkup(results);
-    document.querySelector("#reveal-button")?.addEventListener("click", () => startReveal(results.overall.slice(0, 3)));
+    document.querySelector("#reveal-button")?.addEventListener("click", () => {
+      const winnersSection = document.querySelector(".overall-after");
+      winnersSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.setTimeout(() => startReveal(results.overall.slice(0, 3)), 750);
+    });
   } catch (error) { state.adminToken = ""; sessionStorage.removeItem("adminToken"); render(); }
 }
 function startReveal(top) {
