@@ -182,6 +182,11 @@ function categoryMarkup(results) {
     return `<button class="category-card ${isComplete ? "completed" : ""} ${isActive ? "active" : ""}" data-open-category="${escapeHtml(category.id)}" ${isComplete ? "disabled" : ""}><span class="category-index">0${index + 1}</span><span class="award-icon">${escapeHtml(category.icon)}</span><span class="category-name">${escapeHtml(category.name)}</span><span class="category-theme">${escapeHtml(category.theme)}</span><span class="category-description">${escapeHtml(category.description)}</span><span class="category-status">${status}</span></button>`;
   }).join("")}</div>${panel}</section>`;
 }
+function participantVideoAsset(participant) {
+  const slug = String(participant?.name || "participant").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "participant";
+  const base = pagesMode ? `${pagesPrefix}/public` : "";
+  return { slug, source: `${base}/videos/${slug}.mp4`, filename: `videos/${slug}.mp4` };
+}
 function overallMarkup() {
   return `<section class="overall-after section-block"><div class="section-intro compact"><div><div class="eyebrow"><span class="eyebrow-line"></span>Second act · algehele wenners</div><h2>Die groot <em>koeverte.</em></h2></div><p>Nou eers begin die swart skerm, spanning en 3de → 2de → 1ste plek.</p></div><div class="reveal-stage reveal-0" id="reveal-stage"><div class="curtain-valance" aria-hidden="true"><svg viewBox="0 0 1200 120" preserveAspectRatio="none" role="presentation"><defs><linearGradient id="swag-velvet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c74a55"/><stop offset=".28" stop-color="#8f1c2a"/><stop offset=".7" stop-color="#5b0b17"/><stop offset="1" stop-color="#31050c"/></linearGradient><linearGradient id="swag-trim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0cf88"/><stop offset="1" stop-color="#a87936"/></linearGradient><pattern id="swag-pleats" width="120" height="120" patternUnits="userSpaceOnUse"><path d="M0 0V120" stroke="#22040a" stroke-width="18" opacity=".25"/><path d="M33 0V120" stroke="#f38b82" stroke-width="18" opacity=".14"/><path d="M73 0V120" stroke="#21030a" stroke-width="20" opacity=".24"/><path d="M100 0V120" stroke="#f9a49a" stroke-width="10" opacity=".1"/></pattern></defs><path class="swag-shape" d="M0 0H1200V22C1080 22 1105 64 1000 64S920 22 800 22C680 22 705 64 600 64S520 22 400 22C280 22 305 64 200 64S120 22 0 22Z" fill="url(#swag-velvet)"/><path d="M0 22C120 22 95 64 200 64S280 22 400 22C520 22 495 64 600 64S680 22 800 22C920 22 895 64 1000 64S1080 22 1200 22" fill="none" stroke="#4c0812" stroke-width="3" opacity=".72"/><path d="M0 22C120 22 95 64 200 64S280 22 400 22C520 22 495 64 600 64S680 22 800 22C920 22 895 64 1000 64S1080 22 1200 22" fill="none" stroke="url(#swag-pleats)" stroke-width="23"/></svg></div><div class="stage-spotlights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><div class="reveal-blackout" aria-hidden="true"></div><div class="reveal-content"><span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Druk “Begin algehele onthulling” om die top 3 te speel.</p></div><div class="reveal-bottom"><span>Vriende Oscars 2026</span><span class="reveal-dots"><i></i><i></i><i></i></span></div></div></section>`;
 }
@@ -263,10 +268,16 @@ function startReveal(top) {
   let step = 0;
   const blackout = stage.querySelector(".reveal-blackout");
   const show = () => {
-    const result = top[step === 1 ? 2 : step === 2 ? 1 : 0];
-    stage.className = `reveal-stage reveal-${step} curtains-open`;
-    stage.querySelector(".reveal-content").innerHTML = step === 0 ? `<span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Die kamer hou asem op…</p>` : `<span class="reveal-place">${step === 1 ? "THIRD PLACE" : step === 2 ? "SECOND PLACE" : "AND THE WINNER IS"}</span><div class="reveal-person"><div><span class="reveal-number">0${step === 1 ? 3 : step === 2 ? 2 : 1}</span><h2>${escapeHtml(result.participant.name)}</h2><p>${result.score} punte oor al die vrae</p></div></div>`;
+    const resultIndex = step === 1 ? 2 : step === 2 ? 1 : 0;
+    const result = top[resultIndex];
+    const place = step === 1 ? 3 : step === 2 ? 2 : 1;
+    stage.className = `reveal-stage reveal-${step} curtains-open${step ? " reveal-video-mode" : ""}`;
+    const content = stage.querySelector(".reveal-content");
+    content.innerHTML = step === 0
+      ? `<span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Die kamer hou asem op…</p>`
+      : `<span class="reveal-place">${place === 3 ? "THIRD PLACE" : place === 2 ? "SECOND PLACE" : "AND THE WINNER IS"}</span><div class="reveal-video-frame"><video class="reveal-video" muted loop playsinline controls preload="none" hidden aria-label="Video vir ${escapeHtml(result.participant.name)}"></video><div class="video-placeholder" role="status"><span class="video-placeholder-kicker">VIDEO-PLEKHOUER</span><strong>${escapeHtml(result.participant.name)}</strong><span>Hier sal hierdie deelnemer se video speel.</span><code>public/${participantVideoAsset(result.participant).filename}</code></div></div><div class="reveal-person"><div><span class="reveal-number">0${place}</span><h2>${escapeHtml(result.participant.name)}</h2><p>${result.score} punte oor al die vrae</p></div></div>`;
     stage.querySelectorAll(".reveal-dots i").forEach((dot, index) => dot.classList.toggle("on", index < step));
+    if (step) loadOverallVideo(stage.querySelector(".reveal-video"), result.participant);
   };
   const fadeToStep = (nextStep) => {
     blackout?.classList.add("is-black");
@@ -280,6 +291,28 @@ function startReveal(top) {
   window.setTimeout(() => fadeToStep(1), 2200);
   window.setTimeout(() => fadeToStep(2), 5200);
   window.setTimeout(() => fadeToStep(3), 9400);
+}
+async function loadOverallVideo(video, participant) {
+  if (!video) return;
+  const asset = participantVideoAsset(participant);
+  try {
+    const response = await fetch(asset.source, { method: "HEAD" });
+    if (!response.ok || !video.isConnected) return;
+    video.addEventListener("loadeddata", () => {
+      if (!video.isConnected) return;
+      video.hidden = false;
+      video.nextElementSibling.hidden = true;
+      video.play().catch((error) => console.warn("Winner video autoplay was blocked by the browser.", error));
+    }, { once: true });
+    video.addEventListener("error", () => {
+      video.hidden = true;
+      if (video.nextElementSibling) video.nextElementSibling.hidden = false;
+    }, { once: true });
+    video.src = asset.source;
+    video.load();
+  } catch (error) {
+    console.warn(`Could not check for ${asset.filename}. Showing the video placeholder.`, error);
+  }
 }
 
 async function rankingPage() {
