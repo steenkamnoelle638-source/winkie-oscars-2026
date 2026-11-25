@@ -114,3 +114,111 @@ html,body { overflow-x:clip; }
 .reveal-video-mode .reveal-person { margin-top:14px; }
 @media(max-width:620px){.reveal-stage.reveal-video-mode{min-height:450px;padding:30px 0 48px}.reveal-video-frame{margin-top:13px}.video-placeholder{min-height:178px;gap:8px;padding:13px}.video-placeholder strong{font-size:clamp(27px,9vw,38px)}.video-placeholder code{font-size:8px}.reveal-video-mode .reveal-person{margin-top:12px}.reveal-video-mode .reveal-person h2{font-size:clamp(28px,9vw,42px)}}
 @media(prefers-reduced-motion:reduce){.video-placeholder::before{animation:none}}
+
+
+/* =========================================
+   WINKIE OSCARS 2026
+   RED VELVET THEATER CURTAIN OVERLAY
+   Adapted to keep the stage overflow and video reveal behavior intact.
+   ========================================= */
+.reveal-stage {
+    position: relative;
+    overflow: visible;
+    isolation: isolate;
+    background: #050303;
+}
+
+.reveal-stage::before,
+.reveal-stage::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 52%;
+    z-index: 2;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(255, 160, 150, .24), transparent 18%, rgba(0, 0, 0, .12) 65%, rgba(0, 0, 0, .48)),
+        repeating-linear-gradient(90deg, #39030a 0%, #650811 4%, #a51c29 8%, #d13c45 11%, #78101c 15%, #36030a 19%, #a91d2a 24%, #e04b50 27%, #74101b 32%, #39030a 37%);
+    background-size: 100% 100%, 100% 100%;
+    box-shadow: inset 12px 0 22px rgba(255, 160, 150, .12), inset -18px 0 30px rgba(0, 0, 0, .55), 0 8px 20px rgba(0, 0, 0, .4);
+    filter: drop-shadow(0 5px 8px rgba(0, 0, 0, .45));
+    transition: transform 1.9s cubic-bezier(.55, .02, .25, 1), clip-path 1.9s cubic-bezier(.55, .02, .25, 1);
+    will-change: transform, clip-path;
+}
+
+.reveal-stage::before {
+    left: 0;
+    transform-origin: left center;
+    transform: translateX(0) scaleX(1);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.reveal-stage::after {
+    right: 0;
+    transform-origin: right center;
+    transform: translateX(0) scaleX(1);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    background:
+        linear-gradient(180deg, rgba(255, 160, 150, .24), transparent 18%, rgba(0, 0, 0, .12) 65%, rgba(0, 0, 0, .48)),
+        repeating-linear-gradient(270deg, #39030a 0%, #650811 4%, #a51c29 8%, #d13c45 11%, #78101c 15%, #36030a 19%, #a91d2a 24%, #e04b50 27%, #74101b 32%, #39030a 37%);
+}
+
+/* The opening draws the velvet beyond the stage block without covering the video. */
+.reveal-stage.curtains-open::before {
+    transform: translateX(-34%) scaleX(.48);
+    clip-path: polygon(0 0, 100% 0, 92% 17%, 73% 34%, 52% 46%, 43% 51%, 54% 57%, 78% 73%, 100% 100%, 0 100%);
+}
+
+.reveal-stage.curtains-open::after {
+    transform: translateX(34%) scaleX(.48);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 22% 73%, 46% 57%, 57% 51%, 48% 46%, 27% 34%, 8% 17%);
+}
+
+.curtain-valance {
+    position: absolute;
+    z-index: 4;
+    top: -2px;
+    left: -5%;
+    width: 110%;
+    height: 88px;
+    overflow: hidden;
+    background: transparent;
+    filter: drop-shadow(0 9px 9px rgba(0, 0, 0, .65));
+}
+
+.curtain-valance svg { display: none; }
+
+.curtain-valance::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 115px 72px at 50% 0%, #4a0309 0%, #8d101c 52%, #c12b37 69%, transparent 72%) 0 0 / 230px 88px repeat-x;
+    filter: drop-shadow(0 5px 5px rgba(0, 0, 0, .55));
+}
+
+.curtain-valance::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(180deg, transparent 0 12px, rgba(30, 0, 4, .45) 14px, rgba(255, 115, 110, .18) 17px, transparent 22px);
+    opacity: .8;
+    pointer-events: none;
+}
+
+/* Keep winner content behind closed curtains, then reveal it through the open center. */
+.reveal-content { position: relative; z-index: 1; }
+.stage-spotlights { z-index: 3; }
+.reveal-blackout { z-index: 6; }
+
+@media (max-width: 620px) {
+    .curtain-valance { height: 65px; }
+    .curtain-valance::before { background-size: 170px 65px; }
+    .reveal-stage::before,
+    .reveal-stage::after { width: 54%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal-stage::before,
+    .reveal-stage::after { transition: none; }
+}
