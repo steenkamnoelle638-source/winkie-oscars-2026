@@ -73,14 +73,23 @@ html,body { overflow-x:clip; }
     repeating-linear-gradient(270deg,#37050d 0 5%,#771421 7%,#b53b46 12%,#67101b 18%,#a82b38 24%,#4b0913 31%,#9d2633 38%,#520a15 45%,#ad303b 52%,#64101b 60%,#94202e 68%,#410710 77%,#86202d 86%,#36050c 95%);
   clip-path:polygon(100% 0,0 0,1% 7%,4% 14%,8% 21%,12% 29%,16% 37%,19% 44%,20% 51%,18% 59%,14% 67%,9% 75%,4% 83%,1% 91%,0 100%,100% 100%);
 }
-/* Pull both panels outward and accordion them into compact, still-visible side drapes. */
-.reveal-stage.curtains-open::before { transform:translateX(-2%) scaleX(.34); }
-.reveal-stage.curtains-open::after { transform:translateX(2%) scaleX(.34); }
+/* Gather past the stage block so the velvet sits at the screen edges when open. */
+.reveal-stage.curtains-open::before { transform:translateX(-34%) scaleX(.48); }
+.reveal-stage.curtains-open::after { transform:translateX(34%) scaleX(.48); }
+.stage-spotlights { position:absolute; z-index:3; inset:0; overflow:hidden; opacity:0; pointer-events:none; mix-blend-mode:screen; transition:opacity .55s ease; }
+.stage-spotlights i { position:absolute; top:-8%; width:24%; height:88%; opacity:.78; filter:blur(12px); clip-path:polygon(42% 0,58% 0,100% 100%,0 100%); background:linear-gradient(180deg,rgba(255,220,160,.36),rgba(255,135,76,.12) 42%,rgba(206,41,33,.035) 78%,transparent); }
+.stage-spotlights i:nth-child(1){left:-3%;transform:rotate(-15deg)}
+.stage-spotlights i:nth-child(2){left:16%;transform:rotate(-7deg)}
+.stage-spotlights i:nth-child(3){left:37%;transform:rotate(-2deg)}
+.stage-spotlights i:nth-child(4){right:16%;transform:rotate(7deg)}
+.stage-spotlights i:nth-child(5){right:-3%;transform:rotate(15deg)}
+.reveal-stage.spotlights-on:not(.curtains-open) .stage-spotlights { opacity:.9; }
+.reveal-stage.curtains-open .stage-spotlights { opacity:0; transition-delay:.2s; }
 .curtain-valance { z-index:4; top:-2px; left:-5%; width:110%; height:86px; border:0; background:transparent; clip-path:none; filter:drop-shadow(0 11px 9px rgba(0,0,0,.52)); }
 .curtain-valance svg { display:block; width:100%; height:100%; overflow:visible; }
 .curtain-valance .swag-shape { fill:url(#swag-velvet); }
 /* Keep winner text inside the open center, especially on narrow phones. */
-.reveal-content { width:min(100% - 32px,760px); }
+.reveal-content { z-index:5; width:min(100% - 32px,760px); }
 .reveal-person { display:block; width:100%; margin:25px auto 0; text-align:center; }
 .reveal-person h2 { margin:7px 0; font-size:clamp(30px,7vw,86px); overflow-wrap:anywhere; }
 
