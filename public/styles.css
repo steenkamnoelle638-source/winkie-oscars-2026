@@ -103,6 +103,7 @@ html,body { overflow-x:clip; }
 .reveal-content { width:min(100% - 32px,820px); }
 .reveal-video-frame { position:relative; width:min(100%,760px); margin:17px auto 0; overflow:hidden; border:1px solid rgba(215,176,106,.66); border-radius:9px; background:#080607; box-shadow:0 18px 54px rgba(0,0,0,.42),0 0 35px rgba(215,176,106,.08); }
 .reveal-video { display:block; width:100%; aspect-ratio:16/9; object-fit:contain; background:#050506; }
+.reveal-video[hidden] { display:none; }
 .video-placeholder { position:relative; display:flex; width:100%; min-height:200px; aspect-ratio:16/9; flex-direction:column; align-items:center; justify-content:center; gap:11px; overflow:hidden; isolation:isolate; padding:20px; background:radial-gradient(ellipse at 50% 48%,rgba(194,59,71,.38),transparent 48%),linear-gradient(120deg,#16090d,#39101a 48%,#18090e); color:var(--cream); text-align:center; }
 .video-placeholder::before { position:absolute; z-index:-1; inset:-35%; content:""; background:linear-gradient(110deg,transparent 38%,rgba(255,221,167,.08) 48%,rgba(255,221,167,.26) 52%,rgba(255,221,167,.08) 56%,transparent 66%); transform:translateX(-48%); animation:placeholder-light-sweep 4.4s ease-in-out infinite; }
 @keyframes placeholder-light-sweep { 0%,12%{transform:translateX(-48%)} 88%,100%{transform:translateX(48%)} }
