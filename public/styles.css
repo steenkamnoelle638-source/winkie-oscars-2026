@@ -46,29 +46,44 @@
 .category-all-done h3 { margin:0; font-size:30px; }
 
 
-/* Overall-winner stage: deep red, closely pleated velvet with a gathered swag. */
+
+/* Overall-winner curtain: dense velvet folds part from the center and gather at the wings. */
 html,body { overflow-x:clip; }
 .app-shell { overflow:visible; }
-.reveal-stage { overflow:visible; z-index:1; isolation:isolate; border:0; border-radius:0; background:#060506; }
-.reveal-stage.reveal-1,.reveal-stage.reveal-2,.reveal-stage.reveal-3 { background:radial-gradient(ellipse at 50% 58%,rgba(96,8,22,.18),transparent 48%),#060506; }
+.reveal-stage { overflow:visible; z-index:1; isolation:isolate; border:0; border-radius:0; background:#050506; }
+.reveal-stage.reveal-1,.reveal-stage.reveal-2,.reveal-stage.reveal-3 { background:radial-gradient(ellipse at 50% 52%,rgba(215,176,106,.11),transparent 38rem),#090808; }
 .reveal-stage::before,.reveal-stage::after {
-  content:""; position:absolute; z-index:2; top:0; bottom:-4px; width:64%; pointer-events:none;
-  background:linear-gradient(180deg,rgba(255,118,110,.22),transparent 17%,rgba(20,0,4,.18) 65%,rgba(0,0,0,.62)),repeating-linear-gradient(90deg,#23040a 0 2.5%,#4c0912 3.5%,#9f202c 5%,#b8323e 6.5%,#650e19 8%,#2c040a 10%,#821521 11.5%,#c13b45 13%,#560a14 14.5%,#210309 17%,#8d1926 18%);
-  box-shadow:inset 9px 0 18px rgba(255,145,125,.12),inset -24px 0 35px rgba(0,0,0,.55),0 16px 22px rgba(0,0,0,.4);
-  filter:drop-shadow(0 8px 10px rgba(0,0,0,.42)); transition:transform 1.55s cubic-bezier(.77,0,.18,1); will-change:transform;
+  content:""; position:absolute; z-index:2; top:0; bottom:-2px; width:64%; pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(255,190,170,.16),transparent 18%,rgba(16,0,4,.20) 72%,rgba(0,0,0,.4)),
+    repeating-linear-gradient(90deg,#37050d 0 5%,#771421 7%,#b53b46 12%,#67101b 18%,#a82b38 24%,#4b0913 31%,#9d2633 38%,#520a15 45%,#ad303b 52%,#64101b 60%,#94202e 68%,#410710 77%,#86202d 86%,#36050c 95%);
+  box-shadow:inset 10px 0 23px rgba(255,180,160,.1),inset -22px 0 35px rgba(0,0,0,.58),0 18px 22px rgba(0,0,0,.34);
+  filter:drop-shadow(0 8px 9px rgba(0,0,0,.38));
+  transition:transform 1.8s cubic-bezier(.45,.04,.18,1),filter 1.8s ease;
+  will-change:transform;
 }
-.reveal-stage::before { left:0; transform:translateX(0); }
-.reveal-stage::after { right:0; transform:translateX(0); background:linear-gradient(180deg,rgba(255,118,110,.22),transparent 17%,rgba(20,0,4,.18) 65%,rgba(0,0,0,.62)),repeating-linear-gradient(270deg,#23040a 0 2.5%,#4c0912 3.5%,#9f202c 5%,#b8323e 6.5%,#650e19 8%,#2c040a 10%,#821521 11.5%,#c13b45 13%,#560a14 14.5%,#210309 17%,#8d1926 18%); }
-/* Each panel gathers at the side, with its outer folds extending past the stage. */
-.reveal-stage.curtains-open::before { transform:translateX(-76%); }
-.reveal-stage.curtains-open::after { transform:translateX(76%); }
-.curtain-valance { z-index:4; top:-4px; left:-7%; width:114%; height:90px; border:0; background:transparent; clip-path:none; filter:drop-shadow(0 11px 11px rgba(0,0,0,.55)); }
+.reveal-stage::before {
+  left:0; transform-origin:left center; transform:translateX(0) scaleX(1);
+  clip-path:polygon(0 0,100% 0,99% 7%,96% 14%,92% 21%,88% 29%,84% 37%,81% 44%,80% 51%,82% 59%,86% 67%,91% 75%,96% 83%,99% 91%,100% 100%,0 100%);
+}
+.reveal-stage::after {
+  right:0; transform-origin:right center; transform:translateX(0) scaleX(1);
+  background:
+    linear-gradient(180deg,rgba(255,190,170,.16),transparent 18%,rgba(16,0,4,.20) 72%,rgba(0,0,0,.4)),
+    repeating-linear-gradient(270deg,#37050d 0 5%,#771421 7%,#b53b46 12%,#67101b 18%,#a82b38 24%,#4b0913 31%,#9d2633 38%,#520a15 45%,#ad303b 52%,#64101b 60%,#94202e 68%,#410710 77%,#86202d 86%,#36050c 95%);
+  clip-path:polygon(100% 0,0 0,1% 7%,4% 14%,8% 21%,12% 29%,16% 37%,19% 44%,20% 51%,18% 59%,14% 67%,9% 75%,4% 83%,1% 91%,0 100%,100% 100%);
+}
+/* Pull both panels outward and accordion them into compact, still-visible side drapes. */
+.reveal-stage.curtains-open::before { transform:translateX(-2%) scaleX(.34); }
+.reveal-stage.curtains-open::after { transform:translateX(2%) scaleX(.34); }
+.curtain-valance { z-index:4; top:-2px; left:-5%; width:110%; height:86px; border:0; background:transparent; clip-path:none; filter:drop-shadow(0 11px 9px rgba(0,0,0,.52)); }
 .curtain-valance svg { display:block; width:100%; height:100%; overflow:visible; }
 .curtain-valance .swag-shape { fill:url(#swag-velvet); }
-.reveal-person { display:block; margin:25px auto 0; text-align:center; }
-.reveal-person h2 { margin:7px 0; }
-@media(prefers-reduced-motion:reduce) { .reveal-stage::before,.reveal-stage::after { transition-duration:.01ms; } }
+/* Keep winner text inside the open center, especially on narrow phones. */
+.reveal-content { width:min(100% - 32px,760px); }
+.reveal-person { display:block; width:100%; margin:25px auto 0; text-align:center; }
+.reveal-person h2 { margin:7px 0; font-size:clamp(30px,7vw,86px); overflow-wrap:anywhere; }
 
 @media(max-width:980px){.category-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:620px){.category-grid{grid-template-columns:1fr;}.category-card{min-height:190px;}.question-recap-list{grid-template-columns:1fr;}.reveal-award-heading{align-items:flex-start;}.category-reveal-footer{align-items:flex-start;flex-direction:column;}.category-podium-panel .small-podium{gap:4px;padding-left:0;padding-right:0}.category-podium-panel .podium-spot{min-width:83px}}
-@media(prefers-reduced-motion:reduce){.category-reveal-panel,.category-progress i b{animation:none;transition:none}.category-reveal-panel.is-fading{opacity:1;transform:none}.reveal-stage::before,.reveal-stage::after{transition-duration:.01ms}}
+@media(prefers-reduced-motion:reduce){.category-reveal-panel,.category-progress i b{animation:none;transition:none}.category-reveal-panel.is-fading{opacity:1;transform:none}}
