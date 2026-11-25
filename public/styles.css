@@ -76,8 +76,10 @@ html,body { overflow-x:clip; }
 /* Gather past the stage block so the velvet sits at the screen edges when open. */
 .reveal-stage.curtains-open::before { transform:translateX(-34%) scaleX(.48); }
 .reveal-stage.curtains-open::after { transform:translateX(34%) scaleX(.48); }
-.stage-spotlights { position:absolute; z-index:3; inset:0; overflow:hidden; opacity:0; pointer-events:none; mix-blend-mode:screen; transition:opacity .55s ease; }
-.stage-spotlights i { position:absolute; top:-8%; width:24%; height:88%; opacity:.78; filter:blur(12px); clip-path:polygon(42% 0,58% 0,100% 100%,0 100%); background:linear-gradient(180deg,rgba(255,220,160,.36),rgba(255,135,76,.12) 42%,rgba(206,41,33,.035) 78%,transparent); }
+.stage-spotlights { position:absolute; z-index:3; inset:0; overflow:hidden; opacity:0; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse 14% 30% at 8% 31%,rgba(255,207,139,.28),transparent 82%),radial-gradient(ellipse 16% 34% at 31% 27%,rgba(255,218,160,.24),transparent 82%),radial-gradient(ellipse 15% 31% at 51% 29%,rgba(255,198,125,.26),transparent 82%),radial-gradient(ellipse 16% 34% at 72% 28%,rgba(255,218,160,.24),transparent 82%),radial-gradient(ellipse 14% 30% at 93% 31%,rgba(255,207,139,.28),transparent 82%); transition:opacity .55s ease; }
+.reveal-blackout { position:absolute; z-index:6; inset:0; background:#000; opacity:0; pointer-events:none; transition:opacity .6s ease; }
+.reveal-blackout.is-black { opacity:1; }
+.stage-spotlights i { position:absolute; top:-8%; width:24%; height:88%; opacity:.94; filter:blur(7px); clip-path:polygon(42% 0,58% 0,100% 100%,0 100%); background:linear-gradient(180deg,rgba(255,242,202,.55),rgba(255,174,95,.24) 42%,rgba(238,62,45,.09) 78%,transparent); }
 .stage-spotlights i:nth-child(1){left:-3%;transform:rotate(-15deg)}
 .stage-spotlights i:nth-child(2){left:16%;transform:rotate(-7deg)}
 .stage-spotlights i:nth-child(3){left:37%;transform:rotate(-2deg)}

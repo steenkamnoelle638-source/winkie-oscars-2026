@@ -183,7 +183,7 @@ function categoryMarkup(results) {
   }).join("")}</div>${panel}</section>`;
 }
 function overallMarkup() {
-  return `<section class="overall-after section-block"><div class="section-intro compact"><div><div class="eyebrow"><span class="eyebrow-line"></span>Second act · algehele wenners</div><h2>Die groot <em>koeverte.</em></h2></div><p>Nou eers begin die swart skerm, spanning en 3de → 2de → 1ste plek.</p></div><div class="reveal-stage reveal-0" id="reveal-stage"><div class="curtain-valance" aria-hidden="true"><svg viewBox="0 0 1200 120" preserveAspectRatio="none" role="presentation"><defs><linearGradient id="swag-velvet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c74a55"/><stop offset=".28" stop-color="#8f1c2a"/><stop offset=".7" stop-color="#5b0b17"/><stop offset="1" stop-color="#31050c"/></linearGradient><linearGradient id="swag-trim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0cf88"/><stop offset="1" stop-color="#a87936"/></linearGradient><pattern id="swag-pleats" width="120" height="120" patternUnits="userSpaceOnUse"><path d="M0 0V120" stroke="#22040a" stroke-width="18" opacity=".25"/><path d="M33 0V120" stroke="#f38b82" stroke-width="18" opacity=".14"/><path d="M73 0V120" stroke="#21030a" stroke-width="20" opacity=".24"/><path d="M100 0V120" stroke="#f9a49a" stroke-width="10" opacity=".1"/></pattern></defs><path class="swag-shape" d="M0 0H1200V22C1080 22 1105 64 1000 64S920 22 800 22C680 22 705 64 600 64S520 22 400 22C280 22 305 64 200 64S120 22 0 22Z" fill="url(#swag-velvet)"/><path d="M0 22C120 22 95 64 200 64S280 22 400 22C520 22 495 64 600 64S680 22 800 22C920 22 895 64 1000 64S1080 22 1200 22" fill="none" stroke="#4c0812" stroke-width="3" opacity=".72"/><path d="M0 22C120 22 95 64 200 64S280 22 400 22C520 22 495 64 600 64S680 22 800 22C920 22 895 64 1000 64S1080 22 1200 22" fill="none" stroke="url(#swag-pleats)" stroke-width="23"/></svg></div><div class="stage-spotlights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><div class="reveal-content"><span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Druk “Begin algehele onthulling” om die top 3 te speel.</p></div><div class="reveal-bottom"><span>Vriende Oscars 2026</span><span class="reveal-dots"><i></i><i></i><i></i></span></div></div></section>`;
+  return `<section class="overall-after section-block"><div class="section-intro compact"><div><div class="eyebrow"><span class="eyebrow-line"></span>Second act · algehele wenners</div><h2>Die groot <em>koeverte.</em></h2></div><p>Nou eers begin die swart skerm, spanning en 3de → 2de → 1ste plek.</p></div><div class="reveal-stage reveal-0" id="reveal-stage"><div class="curtain-valance" aria-hidden="true"><svg viewBox="0 0 1200 120" preserveAspectRatio="none" role="presentation"><defs><linearGradient id="swag-velvet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c74a55"/><stop offset=".28" stop-color="#8f1c2a"/><stop offset=".7" stop-color="#5b0b17"/><stop offset="1" stop-color="#31050c"/></linearGradient><linearGradient id="swag-trim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0cf88"/><stop offset="1" stop-color="#a87936"/></linearGradient><pattern id="swag-pleats" width="120" height="120" patternUnits="userSpaceOnUse"><path d="M0 0V120" stroke="#22040a" stroke-width="18" opacity=".25"/><path d="M33 0V120" stroke="#f38b82" stroke-width="18" opacity=".14"/><path d="M73 0V120" stroke="#21030a" stroke-width="20" opacity=".24"/><path d="M100 0V120" stroke="#f9a49a" stroke-width="10" opacity=".1"/></pattern></defs><path class="swag-shape" d="M0 0H1200V22C1080 22 1105 64 1000 64S920 22 800 22C680 22 705 64 600 64S520 22 400 22C280 22 305 64 200 64S120 22 0 22Z" fill="url(#swag-velvet)"/><path d="M0 22C120 22 95 64 200 64S280 22 400 22C520 22 495 64 600 64S680 22 800 22C920 22 895 64 1000 64S1080 22 1200 22" fill="none" stroke="#4c0812" stroke-width="3" opacity=".72"/><path d="M0 22C120 22 95 64 200 64S280 22 400 22C520 22 495 64 600 64S680 22 800 22C920 22 895 64 1000 64S1080 22 1200 22" fill="none" stroke="url(#swag-pleats)" stroke-width="23"/></svg></div><div class="stage-spotlights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><div class="reveal-blackout" aria-hidden="true"></div><div class="reveal-content"><span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Druk “Begin algehele onthulling” om die top 3 te speel.</p></div><div class="reveal-bottom"><span>Vriende Oscars 2026</span><span class="reveal-dots"><i></i><i></i><i></i></span></div></div></section>`;
 }
 function renderCategoryArea(results) {
   const area = document.querySelector("#category-results");
@@ -245,7 +245,10 @@ async function renderResultsData() {
       revealButton.disabled = true;
       winnersSection?.scrollIntoView({ behavior: "instant", block: "start" });
       revealStage.classList.add("spotlights-on");
-      const spotlightHold = 2700;
+      const drumroll = new Audio(pagesMode ? `${pagesPrefix}/public/overall-drumroll.mp3` : "/overall-drumroll.mp3");
+      drumroll.volume = 0.78;
+      drumroll.play().catch((error) => console.warn("Drumroll playback was blocked by the browser.", error));
+      const spotlightHold = 3200;
       const curtainDuration = 1900;
       window.setTimeout(() => {
         revealStage.classList.add("curtains-open");
@@ -258,16 +261,25 @@ function startReveal(top) {
   const stage = document.querySelector("#reveal-stage");
   if (!stage) return;
   let step = 0;
+  const blackout = stage.querySelector(".reveal-blackout");
   const show = () => {
     const result = top[step === 1 ? 2 : step === 2 ? 1 : 0];
     stage.className = `reveal-stage reveal-${step} curtains-open`;
     stage.querySelector(".reveal-content").innerHTML = step === 0 ? `<span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Die kamer hou asem op…</p>` : `<span class="reveal-place">${step === 1 ? "THIRD PLACE" : step === 2 ? "SECOND PLACE" : "AND THE WINNER IS"}</span><div class="reveal-person"><div><span class="reveal-number">0${step === 1 ? 3 : step === 2 ? 2 : 1}</span><h2>${escapeHtml(result.participant.name)}</h2><p>${result.score} punte oor al die vrae</p></div></div>`;
     stage.querySelectorAll(".reveal-dots i").forEach((dot, index) => dot.classList.toggle("on", index < step));
   };
+  const fadeToStep = (nextStep) => {
+    blackout?.classList.add("is-black");
+    window.setTimeout(() => {
+      step = nextStep;
+      show();
+      requestAnimationFrame(() => requestAnimationFrame(() => blackout?.classList.remove("is-black")));
+    }, 600);
+  };
   show();
-  window.setTimeout(() => { step = 1; show(); }, 2200);
-  window.setTimeout(() => { step = 2; show(); }, 5200);
-  window.setTimeout(() => { step = 3; show(); }, 9400);
+  window.setTimeout(() => fadeToStep(1), 2200);
+  window.setTimeout(() => fadeToStep(2), 5200);
+  window.setTimeout(() => fadeToStep(3), 9400);
 }
 
 async function rankingPage() {
