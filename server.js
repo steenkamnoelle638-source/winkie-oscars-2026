@@ -4,6 +4,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
+import { awardCategories, awardQuestions } from "./public/awards-data.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "public");
@@ -22,18 +23,16 @@ const participants = [
   ["deelnemer6", "Deelnemer 6", "Deelnemer 6", "Nominee", "", "plum"],
   ["deelnemer7", "Deelnemer 7", "Deelnemer 7", "Nominee", "", "rose"],
 ];
-const questions = [
-  ["q1", "energy", "Die Vibes", "Beste entrance", "Wie bring die meeste main-character energy wanneer hulle instap?", "Opening scene", 1],
-  ["q2", "energy", "Die Vibes", "Beste dansvloer", "Wie sal eerste op die dansvloer wees — en laaste daar weggaan?", "Dance floor cut", 1],
-  ["q3", "heart", "Die Vriendskap", "Beste hype-person", "Wie is almal se persoonlike hype squad wanneer dinge rof raak?", "Warm & fuzzy", 1.15],
-  ["q4", "heart", "Die Vriendskap", "Most likely to host", "Wie sal ’n gewone kuier in ’n volle produksie verander?", "Production notes", 1],
-  ["q5", "chaos", "Die Chaos", "Beste one-liner", "Wie lewer altyd die quote wat die groep vir maande herhaal?", "Comic relief", 1.1],
-  ["q6", "chaos", "Die Chaos", "Mees onverwags", "Wie verras jou elke keer met ’n nuwe plot twist?", "Plot twist", 1],
-];
+const questions = awardQuestions.map((question) => [
+  question.id, question.mainCategoryId, question.mainCategory, question.subcategory,
+  question.prompt, question.kicker, question.weight,
+]);
 function seed() {
   const insertParticipant = db.prepare("INSERT INTO participants (id, name, short_name, role, photo, accent) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING");
   for (const row of participants) insertParticipant.run(...row);
-  const insertQuestion = db.prepare("INSERT INTO questions (id, main_category_id, main_category, subcategory, prompt, kicker, weight) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING");
+  // The old six-question set cannot be mapped to the new 40-question ballot, so discard only those obsolete question IDs.
+  db.prepare("DELETE FROM questions WHERE id IN ('q1', 'q2', 'q3', 'q4', 'q5', 'q6')").run();
+  const insertQuestion = db.prepare("INSERT INTO questions (id, main_category_id, main_category, subcategory, prompt, kicker, weight) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET main_category_id = excluded.main_category_id, main_category = excluded.main_category, subcategory = excluded.subcategory, prompt = excluded.prompt, kicker = excluded.kicker, weight = excluded.weight");
   for (const row of questions) insertQuestion.run(...row);
   const insertCount = db.prepare("INSERT INTO vote_counts (question_id, candidate_id, votes) VALUES (?, ?, 0) ON CONFLICT(question_id, candidate_id) DO NOTHING");
   for (const question of questions) for (const participant of participants) insertCount.run(question[0], participant[0]);
@@ -54,7 +53,7 @@ const publicQuestion = (row) => ({ id: row.id, mainCategoryId: row.main_category
 app.get("/api/health", (_req, res) => res.json({ status: "ok", stack: "html-javascript-css-sqlite" }));
 app.get("/api/bootstrap", (_req, res) => {
   const currentVotes = db.prepare("SELECT voter_id AS voterId, question_id AS questionId, candidate_id AS candidateId FROM votes").all();
-  res.json({ participants: db.prepare("SELECT * FROM participants").all().map(publicParticipant), questions: db.prepare("SELECT * FROM questions").all().map(publicQuestion), votes: currentVotes });
+  res.json({ participants: db.prepare("SELECT * FROM participants").all().map(publicParticipant), categories: awardCategories, questions: db.prepare("SELECT * FROM questions").all().map(publicQuestion), votes: currentVotes });
 });
 app.get("/api/votes/:voterId", (req, res) => {
   if (!participantById(req.params.voterId)) return res.status(404).json({ error: "Voter not found" });
@@ -103,11 +102,10 @@ function calculateResults() {
   const rows = db.prepare("SELECT question_id AS questionId, candidate_id AS candidateId, votes FROM vote_counts").all();
   const countMap = new Map(rows.map((row) => [`${row.questionId}:${row.candidateId}`, row.votes]));
   const count = (questionId, candidateId) => countMap.get(`${questionId}:${candidateId}`) || 0;
-  const categoryIds = [...new Set(qs.map((question) => question.mainCategoryId))];
-  const categories = categoryIds.map((id) => {
-    const categoryQuestions = qs.filter((question) => question.mainCategoryId === id);
+  const categories = awardCategories.map((category) => {
+    const categoryQuestions = qs.filter((question) => question.mainCategoryId === category.id);
     const podium = people.map((person) => ({ participant: person, score: Math.round(categoryQuestions.reduce((sum, question) => sum + count(question.id, person.id) * question.weight, 0) * 10) / 10 })).sort((a, b) => b.score - a.score || a.participant.name.localeCompare(b.participant.name)).slice(0, 3);
-    return { id, name: categoryQuestions[0].mainCategory, questions: categoryQuestions, podium };
+    return { ...category, questions: categoryQuestions, podium };
   });
   const overall = people.map((person) => ({ participant: person, score: Math.round(qs.reduce((sum, question) => sum + count(question.id, person.id) * question.weight, 0) * 10) / 10 })).sort((a, b) => b.score - a.score || a.participant.name.localeCompare(b.participant.name));
   return { categories, overall, questions: qs, participants: people };

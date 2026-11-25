@@ -6,6 +6,7 @@ const routePath = () => {
   return pagesPrefix && path.startsWith(pagesPrefix) ? path.slice(pagesPrefix.length) || "/" : path;
 };
 const routePage = () => routePath() === "/" ? "home" : routePath().replace(/^\//, "");
+import { awardCategories, awardQuestions } from "./awards-data.js";
 const staticData = {
   participants: [
     { id: "lian", name: "Lian Jacobs", shortName: "Lian", role: "Host", photo: "/images/person-1.webp", accent: "gold" },
@@ -16,14 +17,8 @@ const staticData = {
     { id: "deelnemer6", name: "Deelnemer 6", shortName: "Deelnemer 6", role: "Nominee", photo: "", accent: "plum" },
     { id: "deelnemer7", name: "Deelnemer 7", shortName: "Deelnemer 7", role: "Nominee", photo: "", accent: "rose" },
   ],
-  questions: [
-    { id: "q1", mainCategoryId: "energy", mainCategory: "Die Vibes", subcategory: "Beste entrance", prompt: "Wie bring die meeste main-character energy wanneer hulle instap?", kicker: "Opening scene", weight: 1 },
-    { id: "q2", mainCategoryId: "energy", mainCategory: "Die Vibes", subcategory: "Beste dansvloer", prompt: "Wie sal eerste op die dansvloer wees — en laaste daar weggaan?", kicker: "Dance floor cut", weight: 1 },
-    { id: "q3", mainCategoryId: "heart", mainCategory: "Die Vriendskap", subcategory: "Beste hype-person", prompt: "Wie is almal se persoonlike hype squad wanneer dinge rof raak?", kicker: "Warm & fuzzy", weight: 1.15 },
-    { id: "q4", mainCategoryId: "heart", mainCategory: "Die Vriendskap", subcategory: "Most likely to host", prompt: "Wie sal ’n gewone kuier in ’n volle produksie verander?", kicker: "Production notes", weight: 1 },
-    { id: "q5", mainCategoryId: "chaos", mainCategory: "Die Chaos", subcategory: "Beste one-liner", prompt: "Wie lewer altyd die quote wat die groep vir maande herhaal?", kicker: "Comic relief", weight: 1.1 },
-    { id: "q6", mainCategoryId: "chaos", mainCategory: "Die Chaos", subcategory: "Mees onverwags", prompt: "Wie verras jou elke keer met ’n nuwe plot twist?", kicker: "Plot twist", weight: 1 },
-  ],
+  categories: awardCategories,
+  questions: awardQuestions,
 };
 const state = {
   data: { participants: [], questions: [] },
@@ -33,11 +28,33 @@ const state = {
   votes: JSON.parse(localStorage.getItem("votes") || "{}"),
   adminToken: sessionStorage.getItem("adminToken") || "",
   activeQuestion: 0,
+  questionOrder: [],
+  activeCategoryId: null,
+  categoryPhase: "",
+  completedCategoryIds: [],
 };
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
 const person = (id) => state.data.participants.find((candidate) => candidate.id === id);
 const currentUser = () => person(state.voterId);
+function applyQuestionOrder(voterId) {
+  if (!voterId) { state.questionOrder = []; return; }
+  const questions = state.data.questions || [];
+  const ids = questions.map((question) => question.id);
+  const key = `winkieQuestionOrder:${voterId}`;
+  let order;
+  try { order = JSON.parse(localStorage.getItem(key) || "null"); } catch { order = null; }
+  const valid = Array.isArray(order) && order.length === ids.length && new Set(order).size === ids.length && order.every((id) => ids.includes(id));
+  if (!valid) {
+    order = [...ids];
+    for (let index = order.length - 1; index > 0; index -= 1) {
+      const swap = Math.floor(Math.random() * (index + 1));
+      [order[index], order[swap]] = [order[swap], order[index]];
+    }
+    localStorage.setItem(key, JSON.stringify(order));
+  }
+  state.questionOrder = order.map((id) => questions.find((question) => question.id === id));
+}
 const go = (path) => {
   const target = pagesMode ? `${pagesPrefix}/${path === "/" ? "" : `#${path}`}` : path;
   history.pushState({}, "", target);
@@ -58,10 +75,10 @@ function readLocalBallots() {
 function calculateLocalResults() {
   const ballots = readLocalBallots();
   const count = (questionId, candidateId) => Object.values(ballots).reduce((total, ballot) => total + (ballot[questionId] === candidateId ? 1 : 0), 0);
-  const categories = [...new Set(staticData.questions.map((q) => q.mainCategoryId))].map((id) => {
-    const questions = staticData.questions.filter((q) => q.mainCategoryId === id);
+  const categories = staticData.categories.map((category) => {
+    const questions = staticData.questions.filter((q) => q.mainCategoryId === category.id);
     const podium = staticData.participants.map((participant) => ({ participant, score: Math.round(questions.reduce((sum, question) => sum + count(question.id, participant.id) * question.weight, 0) * 10) / 10 })).sort((a, b) => b.score - a.score || a.participant.name.localeCompare(b.participant.name)).slice(0, 3);
-    return { id, name: questions[0].mainCategory, questions, podium };
+    return { ...category, questions, podium };
   });
   const overall = staticData.participants.map((participant) => ({ participant, score: Math.round(staticData.questions.reduce((sum, question) => sum + count(question.id, participant.id) * question.weight, 0) * 10) / 10 })).sort((a, b) => b.score - a.score || a.participant.name.localeCompare(b.participant.name));
   const questionRankings = staticData.questions.map((question) => ({ question, rankings: staticData.participants.map((participant) => ({ participant, votes: count(question.id, participant.id) })).sort((a, b) => b.votes - a.votes || a.participant.name.localeCompare(b.participant.name)) }));
@@ -106,6 +123,7 @@ async function boot() {
   try {
     state.data = await api("/api/bootstrap");
     if (state.voterId) {
+      applyQuestionOrder(state.voterId);
       const saved = await api(`/api/votes/${state.voterId}`);
       state.votes = Object.fromEntries(saved.map((vote) => [vote.questionId, vote.candidateId]));
       localStorage.setItem("votes", JSON.stringify(state.votes));
@@ -133,10 +151,11 @@ function homePage() {
 function votePage() {
   const voter = currentUser();
   if (!voter) return `<div class="gate-page"><div class="gate-card"><div class="icon-disc">⌑</div><div class="eyebrow"><span class="eyebrow-line"></span>Eerst jou stoel</div><h1>Kies jou naam<br><em>voor jy begin.</em></h1><p>Gaan terug na die eerste blad om jou kieser te kies.</p><button class="button button-primary" data-nav="/">Gaan na naamkeuse →</button></div></div>`;
-  const question = state.data.questions[state.activeQuestion];
+  const questions = state.questionOrder;
+  const question = questions[state.activeQuestion];
   const candidates = state.data.participants.filter((candidate) => candidate.id !== voter.id);
-  const answered = state.data.questions.filter((item) => state.votes[item.id]).length;
-  return `<div class="page-wrap vote-page"><section class="vote-header"><div><div class="eyebrow"><span class="eyebrow-line"></span>Ballot room · ${escapeHtml(voter.shortName)}</div><h1>Maak jou <em>keuses.</em></h1><p>Een naam per vraag. Jou eie naam is out — die res is fair game.</p></div><div class="vote-progress"><span class="progress-number">${String(answered).padStart(2, "0")}</span><span class="progress-slash">/</span><span>${String(state.data.questions.length).padStart(2, "0")} klaar</span><div class="mini-progress"><i style="width:${(answered / state.data.questions.length) * 100}%"></i></div></div></section><div class="ballot-layout"><aside class="question-rail"><div class="rail-title">Tonight’s ballot <span>${state.data.questions.length} vrae</span></div>${state.data.questions.map((item, index) => `<button class="question-nav ${index === state.activeQuestion ? "active" : ""} ${state.votes[item.id] ? "answered" : ""}" data-question="${index}"><span class="question-nav-number">${String(index + 1).padStart(2, "0")}</span><span><small>${escapeHtml(item.mainCategory)}</small><strong>${escapeHtml(item.subcategory)}</strong></span><span>›</span></button>`).join("")}<div class="rail-note">✦ <span>${pagesMode ? "Jou stem bly in hierdie blaaier se plaaslike berging." : "Jou stem word outomaties in SQLite gestoor."}</span></div></aside><section class="question-card-wrap"><div class="question-card"><div class="question-card-top"><span class="question-kicker">${escapeHtml(question.kicker)}</span><span class="question-count">Vraag ${state.activeQuestion + 1} van ${state.data.questions.length}</span></div><h2>${escapeHtml(question.prompt)}</h2><p class="question-helper">⌑ Jy kan nie vir <strong>${escapeHtml(voter.shortName)}</strong> stem nie — die naam is uitgelaat.</p><div class="candidate-grid">${candidates.map((candidate) => `<button class="candidate-card ${state.votes[question.id] === candidate.id ? "selected" : ""}" data-candidate="${candidate.id}"><div class="candidate-photo">${photo(candidate)}${state.votes[question.id] === candidate.id ? `<span class="selected-badge">✓</span>` : ""}</div><span class="candidate-name">${escapeHtml(candidate.name)}</span><span class="candidate-role">${escapeHtml(candidate.role)}</span></button>`).join("")}</div><div class="question-footer"><span>${state.votes[question.id] ? "✓ Keuse gestoor" : "↻ Kies een kandidaat"}</span><div class="question-actions"><button class="button button-ghost" data-prev ${state.activeQuestion === 0 ? "disabled" : ""}>← Vorige</button>${state.activeQuestion < state.data.questions.length - 1 ? `<button class="button button-primary" data-next>Volgende →</button>` : `<button class="button button-primary" data-nav="/results" ${answered < state.data.questions.length ? "disabled" : ""}>Sluit koevert →</button>`}</div></div></div><div class="ballot-footnote"><span class="footnote-line"></span><span>Hierdie is ’n viering, nie ’n hofsaak nie.</span><span class="footnote-line"></span></div></section></div></div>`;
+  const answered = questions.filter((item) => state.votes[item.id]).length;
+  return `<div class="page-wrap vote-page"><section class="vote-header"><div><div class="eyebrow"><span class="eyebrow-line"></span>Ballot room · ${escapeHtml(voter.shortName)}</div><h1>Maak jou <em>keuses.</em></h1><p>Een naam per vraag. Jou eie naam is out — die res is fair game.</p></div><div class="vote-progress"><span class="progress-number">${String(answered).padStart(2, "0")}</span><span class="progress-slash">/</span><span>${String(questions.length).padStart(2, "0")} klaar</span><div class="mini-progress"><i style="width:${(answered / questions.length) * 100}%"></i></div></div></section><div class="ballot-layout"><aside class="question-rail"><div class="rail-title">Tonight’s ballot <span>${questions.length} vrae</span></div>${questions.map((item, index) => `<button class="question-nav ${index === state.activeQuestion ? "active" : ""} ${state.votes[item.id] ? "answered" : ""}" data-question="${index}"><span class="question-nav-number">${String(index + 1).padStart(2, "0")}</span><span><small>${escapeHtml(item.mainCategory)}</small><strong>${escapeHtml(item.subcategory)}</strong></span><span>›</span></button>`).join("")}<div class="rail-note">✦ <span>${pagesMode ? "Jou stem bly in hierdie blaaier se plaaslike berging." : "Jou stem word outomaties in SQLite gestoor."}</span></div></aside><section class="question-card-wrap"><div class="question-card"><div class="question-card-top"><span class="question-kicker">${escapeHtml(question.kicker)}</span><span class="question-count">Vraag ${state.activeQuestion + 1} van ${questions.length}</span></div><h2>${escapeHtml(question.prompt)}</h2><p class="question-helper">⌑ Jy kan nie vir <strong>${escapeHtml(voter.shortName)}</strong> stem nie — die naam is uitgelaat.</p><div class="candidate-grid">${candidates.map((candidate) => `<button class="candidate-card ${state.votes[question.id] === candidate.id ? "selected" : ""}" data-candidate="${candidate.id}"><div class="candidate-photo">${photo(candidate)}${state.votes[question.id] === candidate.id ? `<span class="selected-badge">✓</span>` : ""}</div><span class="candidate-name">${escapeHtml(candidate.name)}</span><span class="candidate-role">${escapeHtml(candidate.role)}</span></button>`).join("")}</div><div class="question-footer"><span>${state.votes[question.id] ? "✓ Keuse gestoor" : "↻ Kies een kandidaat"}</span><div class="question-actions"><button class="button button-ghost" data-prev ${state.activeQuestion === 0 ? "disabled" : ""}>← Vorige</button>${state.activeQuestion < questions.length - 1 ? `<button class="button button-primary" data-next>Volgende →</button>` : `<button class="button button-primary" data-nav="/results" ${answered < questions.length ? "disabled" : ""}>Sluit koevert →</button>`}</div></div></div><div class="ballot-footnote"><span class="footnote-line"></span><span>Hierdie is ’n viering, nie ’n hofsaak nie.</span><span class="footnote-line"></span></div></section></div></div>`;
 }
 
 function podium(result, place, compact = false) {
@@ -147,17 +166,77 @@ function resultsPage() {
   return `<div class="page-wrap results-page"><section class="results-header"><div><div class="eyebrow"><span class="eyebrow-line"></span>Confidential · Hosts only</div><h1>Eers die <em>hoofkategorieë.</em></h1><p>Die kategorie-wenners wys eerste. Daarna begin die groot algehele onthulling.</p></div><div class="results-actions"><button class="button button-ghost" data-nav="/ranking">♛ Volle ranking</button><button class="button button-primary" id="reveal-button">▶ Begin algehele onthulling</button></div></section><div id="results-content"><div class="loading-card">${pagesMode ? "Laai plaaslike stemme…" : "Laai resultate uit SQLite…"}</div></div></div>`;
 }
 function categoryMarkup(results) {
-  return `<section class="category-first section-block"><div class="section-intro compact"><div><div class="eyebrow"><span class="eyebrow-line"></span>Category winners · eerste</div><h2>Die <em>hoofkategorieë</em></h2></div><p>Hierdie wenners word eerste op die resultateskerm gewys, gebaseer op hul subkategorieë.</p></div><div class="category-grid">${results.categories.map((category, index) => `<article class="category-card"><div class="category-card-head"><span class="category-index">0${index + 1}</span><div><h3>${escapeHtml(category.name)}</h3><span>${category.questions.length} subkategorieë</span></div><span>✦</span></div><div class="small-podium">${category.podium.map((item, place) => podium(item, place + 1, true)).join("")}</div><div class="category-evidence">${category.questions.map((question) => `<div><span>${escapeHtml(question.subcategory)}</span><strong>${escapeHtml(category.podium[0].participant.shortName)}</strong></div>`).join("")}</div></article>`).join("")}</div></section>`;
+  const completed = new Set(state.completedCategoryIds);
+  const active = results.categories.find((category) => category.id === state.activeCategoryId);
+  const panel = active && state.categoryPhase === "recap"
+    ? `<div class="category-reveal-panel category-recap-panel" data-category-reveal><div class="reveal-award-heading"><span class="award-icon">${escapeHtml(active.icon)}</span><div><span class="eyebrow">${escapeHtml(active.theme)} · question recap</span><h3>${escapeHtml(active.name)}</h3><p>${escapeHtml(active.description)}</p></div></div><ol class="question-recap-list">${active.questions.map((question, index) => `<li><span>${String(index + 1).padStart(2, "0")}</span><p>${escapeHtml(question.prompt)}</p></li>`).join("")}</ol><div class="category-reveal-footer"><span>Die top drie word nou onthul…</span><button class="button button-ghost" data-show-podium>Wys die podium →</button></div></div>`
+    : active && state.categoryPhase === "podium"
+      ? `<button class="category-reveal-panel category-podium-panel" data-category-reveal data-advance-category aria-label="Minimaliseer ${escapeHtml(active.name)} en gaan na die volgende kategorie"><span class="podium-kicker">${escapeHtml(active.theme)} · top drie</span><h3>${escapeHtml(active.name)}</h3><p class="podium-description">${escapeHtml(active.description)}</p><div class="small-podium category-podium">${active.podium.map((item, place) => podium(item, place + 1, true)).join("")}</div><span class="category-advance-label">Klik om te minimaliseer en na die volgende kategorie te gaan →</span></button>`
+      : state.completedCategoryIds.length === results.categories.length
+        ? `<div class="category-reveal-panel category-all-done" data-category-reveal><span class="award-icon">♛</span><h3>Al 8 kategorieë is onthul.</h3><p>Die hoofkategorieë is afgehandel. Gaan voort na die algehele wenner wanneer julle gereed is.</p></div>`
+        : `<div class="category-reveal-panel category-idle-panel" data-category-reveal><span class="award-icon">✦</span><p>Kies enige toekenning om die vyf vrae te herroep en die top drie te onthul.</p><span>${state.completedCategoryIds.length} van ${results.categories.length} kategorieë afgehandel</span></div>`;
+  return `<section class="category-first section-block"><div class="section-intro compact"><div><div class="eyebrow"><span class="eyebrow-line"></span>Category winners · die aand se toekennings</div><h2>Die <em>hoofkategorieë</em></h2></div><p>Elke toekenning kry sy eie koevertritueel: vrae, dan die top drie.</p></div><div class="category-progress"><span>${state.completedCategoryIds.length} / ${results.categories.length} TOEKENNINGS ONTHUL</span><i><b style="width:${(state.completedCategoryIds.length / results.categories.length) * 100}%"></b></i></div><div class="category-grid">${results.categories.map((category, index) => {
+    const isComplete = completed.has(category.id);
+    const isActive = state.activeCategoryId === category.id;
+    const status = isComplete ? "✓ ONTHUL" : isActive ? "NOU AAN DIE BEURT" : "OPEN KOEVERT";
+    return `<button class="category-card ${isComplete ? "completed" : ""} ${isActive ? "active" : ""}" data-open-category="${escapeHtml(category.id)}" ${isComplete ? "disabled" : ""}><span class="category-index">0${index + 1}</span><span class="award-icon">${escapeHtml(category.icon)}</span><span class="category-name">${escapeHtml(category.name)}</span><span class="category-theme">${escapeHtml(category.theme)}</span><span class="category-description">${escapeHtml(category.description)}</span><span class="category-status">${status}</span></button>`;
+  }).join("")}</div>${panel}</section>`;
 }
-function overallMarkup(results) {
-  return `<section class="overall-after section-block"><div class="section-intro compact"><div><div class="eyebrow"><span class="eyebrow-line"></span>Second act · algehele wenners</div><h2>Die groot <em>koeverte.</em></h2></div><p>Nou eers begin die swart skerm, spanning en 3de → 2de → 1ste plek.</p></div><div class="reveal-stage reveal-0" id="reveal-stage"><div class="curtain-valance" aria-hidden="true"></div><div class="reveal-content"><span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Druk “Begin algehele onthulling” om die top 3 te speel.</p></div><div class="reveal-bottom"><span>Vriende Oscars 2026</span><span class="reveal-dots"><i></i><i></i><i></i></span></div></div></section>`;
+function overallMarkup() {
+  return `<section class="overall-after section-block"><div class="section-intro compact"><div><div class="eyebrow"><span class="eyebrow-line"></span>Second act · algehele wenners</div><h2>Die groot <em>koeverte.</em></h2></div><p>Nou eers begin die swart skerm, spanning en 3de → 2de → 1ste plek.</p></div><div class="reveal-stage reveal-0" id="reveal-stage"><div class="curtain-valance" aria-hidden="true"><svg viewBox="0 0 1200 120" preserveAspectRatio="none" role="presentation"><defs><linearGradient id="swag-velvet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c74a55"/><stop offset=".28" stop-color="#8f1c2a"/><stop offset=".7" stop-color="#5b0b17"/><stop offset="1" stop-color="#31050c"/></linearGradient><linearGradient id="swag-trim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0cf88"/><stop offset="1" stop-color="#a87936"/></linearGradient><pattern id="swag-pleats" width="120" height="120" patternUnits="userSpaceOnUse"><path d="M0 0V120" stroke="#22040a" stroke-width="18" opacity=".25"/><path d="M33 0V120" stroke="#f38b82" stroke-width="18" opacity=".14"/><path d="M73 0V120" stroke="#21030a" stroke-width="20" opacity=".24"/><path d="M100 0V120" stroke="#f9a49a" stroke-width="10" opacity=".1"/></pattern></defs><path class="swag-shape" d="M0 0H1200V22C1080 22 1105 102 1000 102S920 22 800 22C680 22 705 102 600 102S520 22 400 22C280 22 305 102 200 102S120 22 0 22Z" fill="url(#swag-velvet)"/><path d="M0 22C120 22 95 102 200 102S280 22 400 22C520 22 495 102 600 102S680 22 800 22C920 22 895 102 1000 102S1080 22 1200 22" fill="none" stroke="url(#swag-trim)" stroke-width="4"/><path d="M0 22C120 22 95 102 200 102S280 22 400 22C520 22 495 102 600 102S680 22 800 22C920 22 895 102 1000 102S1080 22 1200 22" fill="none" stroke="url(#swag-pleats)" stroke-width="23"/></svg></div><span class="curtain-tieback tieback-left" aria-hidden="true"></span><span class="curtain-tieback tieback-right" aria-hidden="true"></span><div class="reveal-content"><span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Druk “Begin algehele onthulling” om die top 3 te speel.</p></div><div class="reveal-bottom"><span>Vriende Oscars 2026</span><span class="reveal-dots"><i></i><i></i><i></i></span></div></div></section>`;
+}
+function renderCategoryArea(results) {
+  const area = document.querySelector("#category-results");
+  if (!area) return;
+  area.innerHTML = categoryMarkup(results);
+  bindCategoryEvents(results);
+}
+function scheduleCategoryPodium(results, categoryId) {
+  window.setTimeout(() => {
+    if (state.activeCategoryId !== categoryId || state.categoryPhase !== "recap") return;
+    const panel = document.querySelector("[data-category-reveal]");
+    panel?.classList.add("is-fading");
+    window.setTimeout(() => {
+      if (state.activeCategoryId !== categoryId || state.categoryPhase !== "recap") return;
+      state.categoryPhase = "podium";
+      renderCategoryArea(results);
+    }, 450);
+  }, 3600);
+}
+function bindCategoryEvents(results) {
+  document.querySelectorAll("[data-open-category]").forEach((button) => button.addEventListener("click", () => {
+    state.activeCategoryId = button.dataset.openCategory;
+    state.categoryPhase = "recap";
+    renderCategoryArea(results);
+    document.querySelector("[data-category-reveal]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    scheduleCategoryPodium(results, state.activeCategoryId);
+  }));
+  document.querySelector("[data-show-podium]")?.addEventListener("click", () => {
+    state.categoryPhase = "podium";
+    renderCategoryArea(results);
+  });
+  document.querySelector("[data-advance-category]")?.addEventListener("click", () => {
+    const currentIndex = results.categories.findIndex((category) => category.id === state.activeCategoryId);
+    if (!state.completedCategoryIds.includes(state.activeCategoryId)) state.completedCategoryIds.push(state.activeCategoryId);
+    let next = null;
+    for (let offset = 1; offset <= results.categories.length; offset += 1) {
+      const candidate = results.categories[(currentIndex + offset + results.categories.length) % results.categories.length];
+      if (!state.completedCategoryIds.includes(candidate.id)) { next = candidate; break; }
+    }
+    state.activeCategoryId = next?.id || null;
+    state.categoryPhase = next ? "recap" : "done";
+    renderCategoryArea(results);
+    document.querySelector("[data-category-reveal]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (next) scheduleCategoryPodium(results, next.id);
+  });
 }
 
 async function renderResultsData() {
   const container = document.querySelector("#results-content");
   try {
     const results = await api("/api/results", { headers: { "x-admin-token": state.adminToken } });
-    container.innerHTML = categoryMarkup(results) + overallMarkup(results);
+    container.innerHTML = `<div id="category-results">${categoryMarkup(results)}</div>${overallMarkup(results)}`;
+    bindCategoryEvents(results);
     const revealButton = document.querySelector("#reveal-button");
     revealButton?.addEventListener("click", () => {
       const winnersSection = document.querySelector(".overall-after");
@@ -204,13 +283,13 @@ function bindEvents() {
   document.querySelectorAll("[data-nav]").forEach((element) => element.addEventListener("click", () => go(element.dataset.nav)));
   document.querySelectorAll("[data-scroll]").forEach((element) => element.addEventListener("click", () => document.querySelector(element.dataset.scroll)?.scrollIntoView({ behavior: "smooth" })));
   const select = document.querySelector("#name-select");
-  select?.addEventListener("change", async (event) => { state.voterId = event.target.value; localStorage.setItem("voterId", state.voterId); state.votes = {}; if (state.voterId) { const saved = await api(`/api/votes/${state.voterId}`); state.votes = Object.fromEntries(saved.map((vote) => [vote.questionId, vote.candidateId])); } render(); });
+  select?.addEventListener("change", async (event) => { state.voterId = event.target.value; state.activeQuestion = 0; localStorage.setItem("voterId", state.voterId); state.votes = {}; applyQuestionOrder(state.voterId); if (state.voterId) { const saved = await api(`/api/votes/${state.voterId}`); state.votes = Object.fromEntries(saved.map((vote) => [vote.questionId, vote.candidateId])); } render(); });
   document.querySelector("#rules-check")?.addEventListener("change", (event) => { state.rulesRead = event.target.checked; localStorage.setItem("rulesRead", String(state.rulesRead)); render(); });
   document.querySelector("#start-vote")?.addEventListener("click", () => go("/vote"));
   document.querySelectorAll("[data-question]").forEach((button) => button.addEventListener("click", () => { state.activeQuestion = Number(button.dataset.question); render(); }));
-  document.querySelectorAll("[data-candidate]").forEach((button) => button.addEventListener("click", async () => { const questionId = state.data.questions[state.activeQuestion].id; const candidateId = button.dataset.candidate; try { await api("/api/votes", { method: "POST", body: JSON.stringify({ voterId: state.voterId, questionId, candidateId }) }); state.votes[questionId] = candidateId; localStorage.setItem("votes", JSON.stringify(state.votes)); render(); } catch (error) { alert(error.message); } }));
+  document.querySelectorAll("[data-candidate]").forEach((button) => button.addEventListener("click", async () => { const questionId = state.questionOrder[state.activeQuestion].id; const candidateId = button.dataset.candidate; try { await api("/api/votes", { method: "POST", body: JSON.stringify({ voterId: state.voterId, questionId, candidateId }) }); state.votes[questionId] = candidateId; localStorage.setItem("votes", JSON.stringify(state.votes)); render(); } catch (error) { alert(error.message); } }));
   document.querySelector("[data-prev]")?.addEventListener("click", () => { state.activeQuestion = Math.max(0, state.activeQuestion - 1); render(); });
-  document.querySelector("[data-next]")?.addEventListener("click", () => { state.activeQuestion = Math.min(state.data.questions.length - 1, state.activeQuestion + 1); render(); });
+  document.querySelector("[data-next]")?.addEventListener("click", () => { state.activeQuestion = Math.min(state.questionOrder.length - 1, state.activeQuestion + 1); render(); });
   document.querySelector("#admin-form")?.addEventListener("submit", async (event) => { event.preventDefault(); const error = document.querySelector("#admin-error"); try { const result = await api("/api/admin/login", { method: "POST", body: JSON.stringify({ password: document.querySelector("#admin-password").value }) }); state.adminToken = result.token; sessionStorage.setItem("adminToken", result.token); render(); } catch (err) { error.textContent = err.message; } });
 }
 window.addEventListener("popstate", () => { state.page = routePage(); render(); });
