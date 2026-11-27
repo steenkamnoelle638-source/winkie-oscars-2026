@@ -52,10 +52,10 @@ html,body { overflow-x:clip; }
 .app-shell { overflow:visible; }
 .reveal-stage { overflow:visible; z-index:1; isolation:isolate; border:0; border-radius:0; background:#050506; }
 .reveal-stage.reveal-1,.reveal-stage.reveal-2,.reveal-stage.reveal-3 { background:radial-gradient(ellipse at 50% 52%,rgba(215,176,106,.11),transparent 38rem),#090808; }
-.curtain-overlay-video { position:absolute; z-index:2; top:0; left:0; display:block; width:100%; height:100%; object-fit:fill; pointer-events:none; transition:width 1.9s cubic-bezier(.45,.04,.18,1),left 1.9s cubic-bezier(.45,.04,.18,1); }
+.curtain-overlay-video { position:absolute; z-index:7; top:0; left:0; display:block; width:100%; height:100%; object-fit:fill; pointer-events:none; transition:width 1.9s cubic-bezier(.45,.04,.18,1),left 1.9s cubic-bezier(.45,.04,.18,1); }
 .reveal-stage.curtains-open .curtain-overlay-video { left:-8%; width:116%; }
-.stage-spotlights { position:absolute; z-index:3; inset:0; overflow:hidden; opacity:0; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse 14% 30% at 8% 31%,rgba(255,207,139,.28),transparent 82%),radial-gradient(ellipse 16% 34% at 31% 27%,rgba(255,218,160,.24),transparent 82%),radial-gradient(ellipse 15% 31% at 51% 29%,rgba(255,198,125,.26),transparent 82%),radial-gradient(ellipse 16% 34% at 72% 28%,rgba(255,218,160,.24),transparent 82%),radial-gradient(ellipse 14% 30% at 93% 31%,rgba(255,207,139,.28),transparent 82%); transition:opacity .55s ease; }
-.reveal-blackout { position:absolute; z-index:6; inset:0; background:#000; opacity:0; pointer-events:none; transition:opacity .6s ease; }
+.stage-spotlights { position:absolute; z-index:8; inset:0; overflow:hidden; opacity:0; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse 14% 30% at 8% 31%,rgba(255,207,139,.28),transparent 82%),radial-gradient(ellipse 16% 34% at 31% 27%,rgba(255,218,160,.24),transparent 82%),radial-gradient(ellipse 15% 31% at 51% 29%,rgba(255,198,125,.26),transparent 82%),radial-gradient(ellipse 16% 34% at 72% 28%,rgba(255,218,160,.24),transparent 82%),radial-gradient(ellipse 14% 30% at 93% 31%,rgba(255,207,139,.28),transparent 82%); transition:opacity .55s ease; }
+.reveal-blackout { position:absolute; z-index:10; inset:0; background:#000; opacity:0; pointer-events:none; transition:opacity .6s ease; }
 .reveal-blackout.is-black { opacity:1; }
 .stage-spotlights i { position:absolute; top:-8%; width:24%; height:88%; opacity:.94; filter:blur(7px); clip-path:polygon(42% 0,58% 0,100% 100%,0 100%); background:linear-gradient(180deg,rgba(255,242,202,.55),rgba(255,174,95,.24) 42%,rgba(238,62,45,.09) 78%,transparent); }
 .stage-spotlights i:nth-child(1){left:-3%;transform:rotate(-15deg)}
