@@ -188,7 +188,7 @@ function participantVideoAsset(participant) {
   return { slug, source: `${base}/videos/${slug}.mp4`, filename: `videos/${slug}.mp4` };
 }
 function overallMarkup() {
-  return `<section class="overall-after section-block"><div class="section-intro compact"><div><div class="eyebrow"><span class="eyebrow-line"></span>Second act · algehele wenners</div><h2>Die groot <em>koeverte.</em></h2></div><p>Nou eers begin die swart skerm, spanning en 3de → 2de → 1ste plek.</p></div><div class="reveal-stage reveal-0" id="reveal-stage"><video class="curtain-overlay-video" muted playsinline preload="auto" aria-hidden="true" tabindex="-1"><source src="${pagesMode ? `${pagesPrefix}/public` : ""}/videos/curtains-overlay.webm" type="video/webm"></video><div class="stage-spotlights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><div class="reveal-blackout" aria-hidden="true"></div><div class="reveal-content"><span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Druk “Begin algehele onthulling” om die top 3 te speel.</p></div><div class="reveal-bottom"><span>Vriende Oscars 2026</span><span class="reveal-dots"><i></i><i></i><i></i></span></div></div></section>`;
+  return `<section class="overall-after section-block"><div class="section-intro compact"><div><div class="eyebrow"><span class="eyebrow-line"></span>Second act · algehele wenners</div><h2>Die groot <em>koeverte.</em></h2></div><p>Nou eers begin die swart skerm, spanning en 3de → 2de → 1ste plek.</p></div><div class="reveal-stage reveal-0" id="reveal-stage"><video class="curtain-overlay-video" muted playsinline preload="auto" aria-hidden="true" tabindex="-1"><source src="${pagesMode ? `${pagesPrefix}/public` : ""}/videos/curtains-overlay.webm" type="video/webm"></video><div class="reveal-blackout" aria-hidden="true"></div><div class="reveal-content"><span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Druk “Begin algehele onthulling” om die top 3 te speel.</p></div><div class="reveal-bottom"><span>Vriende Oscars 2026</span><span class="reveal-dots"><i></i><i></i><i></i></span></div></div></section>`;
 }
 function renderCategoryArea(results) {
   const area = document.querySelector("#category-results");
@@ -249,18 +249,17 @@ async function renderResultsData() {
       if (!winnersSection || !revealStage) return;
       revealButton.disabled = true;
       winnersSection?.scrollIntoView({ behavior: "instant", block: "start" });
-      revealStage.classList.add("spotlights-on");
       const curtainOverlay = revealStage.querySelector(".curtain-overlay-video");
       curtainOverlay?.play().catch((error) => console.warn("Curtain overlay playback was blocked by the browser.", error));
       const drumroll = new Audio(pagesMode ? `${pagesPrefix}/public/overall-drumroll.mp3` : "/overall-drumroll.mp3");
       drumroll.volume = 0.78;
       drumroll.play().catch((error) => console.warn("Drumroll playback was blocked by the browser.", error));
-      const spotlightHold = 3200;
+      const curtainHold = 3200;
       const curtainDuration = 1900;
       window.setTimeout(() => {
         revealStage.classList.add("curtains-open");
         window.setTimeout(() => startReveal(results.overall.slice(0, 3)), curtainDuration);
-      }, spotlightHold);
+      }, curtainHold);
     });
   } catch (error) { state.adminToken = ""; sessionStorage.removeItem("adminToken"); render(); }
 }
