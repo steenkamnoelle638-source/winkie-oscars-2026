@@ -247,50 +247,169 @@ async function renderResultsData() {
       const revealStage = document.querySelector("#reveal-stage");
       if (!revealStage) return;
       revealButton.disabled = true;
-      revealStage.scrollIntoView({ behavior: "instant", block: "center" });
+      revealButton.textContent = "Die onthulling begin...";
+      revealStage.classList.add("reveal-video-mode");
+      revealStage.scrollIntoView({ behavior: "smooth", block: "center" });
+
       const curtainOverlay = revealStage.querySelector(".curtain-overlay-video");
-      curtainOverlay?.play().catch((error) => console.warn("Curtain overlay playback was blocked by the browser.", error));
       const drumroll = new Audio(pagesMode ? `${pagesPrefix}/public/overall-drumroll.mp3` : "/overall-drumroll.mp3");
       drumroll.volume = 0.78;
-      drumroll.play().catch((error) => console.warn("Drumroll playback was blocked by the browser.", error));
-      const curtainHold = 3200;
-      const curtainDuration = 1900;
-      window.setTimeout(() => {
-        revealStage.classList.add("curtains-open");
-        window.setTimeout(() => startReveal(results.overall.slice(0, 3)), curtainDuration);
-      }, curtainHold);
+      drumroll.play().catch(() => {});
+
+      let finished = false;
+      const finishCurtains = () => {
+        if (finished) return;
+        finished = true;
+        if (!curtainOverlay) {
+          startReveal(results.overall.slice(0, 3));
+          return;
+        }
+        curtainOverlay.pause();
+        curtainOverlay.classList.add("is-fading");
+        window.setTimeout(() => {
+          curtainOverlay.hidden = true;
+          startReveal(results.overall.slice(0, 3));
+        }, 950);
+      };
+
+      if (curtainOverlay) {
+        curtainOverlay.hidden = false;
+        curtainOverlay.classList.remove("is-fading");
+        curtainOverlay.currentTime = 0;
+        curtainOverlay.addEventListener("ended", finishCurtains, { once: true });
+        curtainOverlay.play().catch(finishCurtains);
+        window.setTimeout(finishCurtains, 9500);
+        window.setTimeout(() => revealStage.classList.add("curtains-open"), 3200);
+      } else {
+        finishCurtains();
+      }
     });
   } catch (error) { state.adminToken = ""; sessionStorage.removeItem("adminToken"); render(); }
 }
+function winnerRevealMarkup(result, place, phase) {
+  const participant = result?.participant;
+  if (!participant) return "";
+
+  const asset = participantVideoAsset(participant);
+  const displayName = participant.shortName || participant.name;
+  const labels = {
+    3: "THIRD PLACE",
+    2: "SECOND PLACE",
+    1: "AND THE WINNER IS...",
+  };
+  const medals = { 3: "🥉", 2: "🥈", 1: "🏆" };
+  const videoMarkup = `
+    <div class="reveal-video-frame">
+      <video class="reveal-video" muted playsinline controls preload="none" hidden aria-label="Video vir ${escapeHtml(participant.name)}"></video>
+      <div class="video-placeholder">
+        <span class="video-placeholder-kicker">WINNER VIDEO</span>
+        <strong>${escapeHtml(displayName)}</strong>
+        <span>Die oomblik behoort aan jou!</span>
+        <code>public/${asset.filename}</code>
+      </div>
+    </div>`;
+
+  if (phase === "intro") {
+    return `
+      <div class="winner-intro">
+        <span class="reveal-place">${labels[place]}</span>
+        <h2>${place === 1 ? "Die oomblik van waarheid..." : "Wie sal dit wees?"}</h2>
+        ${videoMarkup}
+        <p class="winner-intro-caption">${place === 1 ? "Die algehele wenner word binnekort aangekondig." : "Die koevert is oopgemaak..."}</p>
+      </div>`;
+  }
+
+  return `
+    <div class="winner-podium-reveal place-${place}">
+      <div class="winner-reveal-heading">
+        <span class="winner-medal" aria-hidden="true">${medals[place]}</span>
+        <span class="reveal-place">${labels[place]}</span>
+      </div>
+      <div class="winner-reveal-body">
+        <div class="winner-portrait">${photo(participant)}</div>
+        <div class="winner-details">
+          <span class="winner-title">${place === 1 ? "ALGEHELE WENNER" : "PODIUM WENNER"}</span>
+          <h2>${escapeHtml(participant.name)}</h2>
+          <p>${result.score} punte</p>
+        </div>
+        <div class="winner-video-popup">${videoMarkup}</div>
+      </div>
+    </div>`;
+}
+
 function startReveal(top) {
   const stage = document.querySelector("#reveal-stage");
-  if (!stage) return;
-  let step = 0;
+  const validTop = Array.isArray(top) ? top.filter((item) => item?.participant) : [];
+  if (!stage || !validTop.length) return;
+
+  const content = stage.querySelector(".reveal-content");
   const blackout = stage.querySelector(".reveal-blackout");
-  const show = () => {
-    const resultIndex = step === 1 ? 2 : step === 2 ? 1 : 0;
-    const result = top[resultIndex];
-    const place = step === 1 ? 3 : step === 2 ? 2 : 1;
-    stage.className = `reveal-stage reveal-${step} curtains-open${step ? " reveal-video-mode" : ""}`;
-    const content = stage.querySelector(".reveal-content");
-    content.innerHTML = step === 0
-      ? `<span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Die kamer hou asem op…</p>`
-      : `<span class="reveal-place">${place === 3 ? "THIRD PLACE" : place === 2 ? "SECOND PLACE" : "AND THE WINNER IS"}</span><div class="reveal-video-frame"><video class="reveal-video" muted loop playsinline controls preload="none" hidden aria-label="Video vir ${escapeHtml(result.participant.name)}"></video><div class="video-placeholder" role="status"><span class="video-placeholder-kicker">VIDEO-PLEKHOUER</span><strong>${escapeHtml(result.participant.name)}</strong><span>Hier sal hierdie deelnemer se video speel.</span><code>public/${participantVideoAsset(result.participant).filename}</code></div></div><div class="reveal-person"><div><span class="reveal-number">0${place}</span><h2>${escapeHtml(result.participant.name)}</h2><p>${result.score} punte oor al die vrae</p></div></div>`;
-    stage.querySelectorAll(".reveal-dots i").forEach((dot, index) => dot.classList.toggle("on", index < step));
-    if (step) loadOverallVideo(stage.querySelector(".reveal-video"), result.participant);
-  };
-  const fadeToStep = (nextStep) => {
+  if (!content) return;
+
+  const winners = [
+    { result: validTop[2], place: 3, videoWait: 5000, podiumWait: 2800 },
+    { result: validTop[1], place: 2, videoWait: 5200, podiumWait: 3000 },
+    { result: validTop[0], place: 1, videoWait: 7500, podiumWait: 4500 },
+  ].filter((item) => item.result);
+  function transition(html, stageClass, result = null) {
     blackout?.classList.add("is-black");
     window.setTimeout(() => {
-      step = nextStep;
-      show();
+      content.innerHTML = html;
+      stage.className = `reveal-stage reveal-video-mode ${stageClass}`;
+      const video = content.querySelector(".reveal-video");
+      if (video && result) loadOverallVideo(video, result.participant);
       requestAnimationFrame(() => requestAnimationFrame(() => blackout?.classList.remove("is-black")));
     }, 600);
-  };
-  show();
-  window.setTimeout(() => fadeToStep(1), 2200);
-  window.setTimeout(() => fadeToStep(2), 5200);
-  window.setTimeout(() => fadeToStep(3), 9400);
+  }
+
+  function showFinalPodium() {
+    const first = validTop[0];
+    const second = validTop[1];
+    const third = validTop[2];
+    if (!first) return;
+
+    transition(`
+      <div class="overall-final">
+        <span class="reveal-kicker">WINKIE OSCARS 2026</span>
+        <h2>Ons algehele top 3</h2>
+        <p class="overall-final-subtitle">Die aand se drie groot wenners.</p>
+        <div class="overall-podium final-podium">
+          ${second ? podium(second, 2) : ""}
+          ${podium(first, 1)}
+          ${third ? podium(third, 3) : ""}
+        </div>
+        <span class="final-congratulations">✦ BAIE GELUK AAN ONS WENNERS ✦</span>
+        <button class="button button-primary replay-button" id="replay-overall">Speel onthulling weer ↻</button>
+      </div>`, "reveal-final");
+
+    window.setTimeout(() => {
+      document.querySelector("#replay-overall")?.addEventListener("click", () => startReveal(validTop));
+    }, 650);
+  }
+
+  function showWinner(index) {
+    if (index >= winners.length) {
+      showFinalPodium();
+      return;
+    }
+
+    const winner = winners[index];
+    const extraWait = winner.place === 1 ? 2800 : 0;
+    window.setTimeout(() => {
+      transition(winnerRevealMarkup(winner.result, winner.place, "intro"), `reveal-intro reveal-place-${winner.place}`, winner.result);
+      window.setTimeout(() => {
+        transition(winnerRevealMarkup(winner.result, winner.place, "podium"), `reveal-podium reveal-place-${winner.place}`, winner.result);
+        window.setTimeout(() => showWinner(index + 1), winner.podiumWait);
+      }, winner.videoWait);
+    }, extraWait);
+  }
+
+  transition(`
+    <span class="reveal-kicker">WINKIE OSCARS 2026</span>
+    <h2>Lights out.</h2>
+    <p>Die oomblik waarvoor almal gewag het...</p>
+    <span class="reveal-icon">✦</span>`, "reveal-black-screen");
+  window.setTimeout(() => showWinner(0), 2600);
 }
 async function loadOverallVideo(video, participant) {
   if (!video) return;
