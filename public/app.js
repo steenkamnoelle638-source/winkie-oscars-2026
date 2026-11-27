@@ -244,11 +244,10 @@ async function renderResultsData() {
     bindCategoryEvents(results);
     const revealButton = document.querySelector("#reveal-button");
     revealButton?.addEventListener("click", () => {
-      const winnersSection = document.querySelector(".overall-after");
       const revealStage = document.querySelector("#reveal-stage");
-      if (!winnersSection || !revealStage) return;
+      if (!revealStage) return;
       revealButton.disabled = true;
-      winnersSection?.scrollIntoView({ behavior: "instant", block: "start" });
+      revealStage.scrollIntoView({ behavior: "instant", block: "center" });
       const curtainOverlay = revealStage.querySelector(".curtain-overlay-video");
       curtainOverlay?.play().catch((error) => console.warn("Curtain overlay playback was blocked by the browser.", error));
       const drumroll = new Audio(pagesMode ? `${pagesPrefix}/public/overall-drumroll.mp3` : "/overall-drumroll.mp3");
