@@ -188,7 +188,7 @@ function participantVideoAsset(participant) {
   return { slug, source: `${base}/videos/${slug}.mp4`, filename: `videos/${slug}.mp4` };
 }
 function overallMarkup() {
-  return `<section class="overall-after section-block"><div class="section-intro compact"><div><div class="eyebrow"><span class="eyebrow-line"></span>Second act · algehele wenners</div><h2>Die groot <em>koeverte.</em></h2></div><p>Nou eers begin die swart skerm, spanning en 3de → 2de → 1ste plek.</p></div><div class="reveal-stage reveal-0" id="reveal-stage"><video class="curtain-overlay-video" muted playsinline preload="auto" aria-hidden="true" tabindex="-1"><source src="${pagesMode ? `${pagesPrefix}/public` : ""}/videos/curtains-overlay.webm" type="video/webm"></video><div class="reveal-blackout" aria-hidden="true"></div><div class="reveal-content"><span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Druk “Begin algehele onthulling” om die top 3 te speel.</p></div><div class="reveal-bottom"><span>Vriende Oscars 2026</span><span class="reveal-dots"><i></i><i></i><i></i></span></div></div></section>`;
+  return `<section class="overall-after section-block"><div class="section-intro compact"><div><div class="eyebrow"><span class="eyebrow-line"></span>Second act · algehele wenners</div><h2>Die groot <em>koeverte.</em></h2></div><p>Nou eers begin die swart skerm, spanning en 3de → 2de → 1ste plek.</p></div><div class="reveal-stage reveal-0" id="reveal-stage"><video class="curtain-overlay-video" muted playsinline preload="auto" aria-hidden="true" tabindex="-1" hidden><source src="${pagesMode ? `${pagesPrefix}/public` : ""}/videos/curtains-overlay.webm" type="video/webm"></video><div class="reveal-blackout" aria-hidden="true"></div><div class="reveal-content"><span class="reveal-kicker">Overall results</span><span class="reveal-icon">◷</span><h2>Lights out.</h2><p>Druk “Begin algehele onthulling” om die top 3 te speel.</p></div><div class="reveal-bottom"><span>Vriende Oscars 2026</span><span class="reveal-dots"><i></i><i></i><i></i></span></div></div></section>`;
 }
 function renderCategoryArea(results) {
   const area = document.querySelector("#category-results");
@@ -244,45 +244,9 @@ async function renderResultsData() {
     bindCategoryEvents(results);
     const revealButton = document.querySelector("#reveal-button");
     revealButton?.addEventListener("click", () => {
-      const revealStage = document.querySelector("#reveal-stage");
-      if (!revealStage) return;
       revealButton.disabled = true;
       revealButton.textContent = "Die onthulling begin...";
-      revealStage.classList.add("reveal-video-mode");
-      revealStage.scrollIntoView({ behavior: "smooth", block: "center" });
-
-      const curtainOverlay = revealStage.querySelector(".curtain-overlay-video");
-      const drumroll = new Audio(pagesMode ? `${pagesPrefix}/public/overall-drumroll.mp3` : "/overall-drumroll.mp3");
-      drumroll.volume = 0.78;
-      drumroll.play().catch(() => {});
-
-      let finished = false;
-      const finishCurtains = () => {
-        if (finished) return;
-        finished = true;
-        if (!curtainOverlay) {
-          startReveal(results.overall.slice(0, 3));
-          return;
-        }
-        curtainOverlay.pause();
-        curtainOverlay.classList.add("is-fading");
-        window.setTimeout(() => {
-          curtainOverlay.hidden = true;
-          startReveal(results.overall.slice(0, 3));
-        }, 950);
-      };
-
-      if (curtainOverlay) {
-        curtainOverlay.hidden = false;
-        curtainOverlay.classList.remove("is-fading");
-        curtainOverlay.currentTime = 0;
-        curtainOverlay.addEventListener("ended", finishCurtains, { once: true });
-        curtainOverlay.play().catch(finishCurtains);
-        window.setTimeout(finishCurtains, 9500);
-        window.setTimeout(() => revealStage.classList.add("curtains-open"), 3200);
-      } else {
-        finishCurtains();
-      }
+      playOverallReveal(results.overall.slice(0, 3));
     });
   } catch (error) { state.adminToken = ""; sessionStorage.removeItem("adminToken"); render(); }
 }
@@ -337,7 +301,48 @@ function winnerRevealMarkup(result, place, phase) {
     </div>`;
 }
 
-function startReveal(top) {
+function playOverallReveal(top) {
+  const revealStage = document.querySelector("#reveal-stage");
+  if (!revealStage) return;
+
+  revealStage.className = "reveal-stage reveal-0 reveal-video-mode";
+  revealStage.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  const curtainOverlay = revealStage.querySelector(".curtain-overlay-video");
+  const drumroll = new Audio(pagesMode ? `${pagesPrefix}/public/overall-drumroll.mp3` : "/overall-drumroll.mp3");
+  drumroll.volume = 0.78;
+  drumroll.play().catch(() => {});
+
+  let finished = false;
+  const finishCurtains = () => {
+    if (finished) return;
+    finished = true;
+    if (!curtainOverlay) {
+      startReveal(top);
+      return;
+    }
+    curtainOverlay.pause();
+    curtainOverlay.classList.add("is-fading");
+    window.setTimeout(() => {
+      curtainOverlay.hidden = true;
+      startReveal(top);
+    }, 950);
+  };
+
+  if (curtainOverlay) {
+    curtainOverlay.hidden = false;
+    curtainOverlay.classList.remove("is-fading");
+    curtainOverlay.currentTime = 0;
+    curtainOverlay.addEventListener("ended", finishCurtains, { once: true });
+    curtainOverlay.play().catch(finishCurtains);
+    window.setTimeout(finishCurtains, 9500);
+    window.setTimeout(() => revealStage.classList.add("curtains-open"), 3200);
+  } else {
+    finishCurtains();
+  }
+}
+
+async function startReveal(top) {
   const stage = document.querySelector("#reveal-stage");
   const validTop = Array.isArray(top) ? top.filter((item) => item?.participant) : [];
   if (!stage || !validTop.length) return;
@@ -346,29 +351,34 @@ function startReveal(top) {
   const blackout = stage.querySelector(".reveal-blackout");
   if (!content) return;
 
+  const wait = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
   const winners = [
-    { result: validTop[2], place: 3, videoWait: 5000, podiumWait: 2800 },
-    { result: validTop[1], place: 2, videoWait: 5200, podiumWait: 3000 },
-    { result: validTop[0], place: 1, videoWait: 7500, podiumWait: 4500 },
+    { result: validTop[2], place: 3, podiumWait: 2800 },
+    { result: validTop[1], place: 2, podiumWait: 3000 },
+    { result: validTop[0], place: 1, podiumWait: 4500 },
   ].filter((item) => item.result);
-  function transition(html, stageClass, result = null) {
+
+  async function transition(html, stageClass) {
     blackout?.classList.add("is-black");
-    window.setTimeout(() => {
-      content.innerHTML = html;
-      stage.className = `reveal-stage reveal-video-mode ${stageClass}`;
-      const video = content.querySelector(".reveal-video");
-      if (video && result) loadOverallVideo(video, result.participant);
-      requestAnimationFrame(() => requestAnimationFrame(() => blackout?.classList.remove("is-black")));
-    }, 600);
+    await wait(600);
+    content.innerHTML = html;
+    stage.className = `reveal-stage reveal-video-mode ${stageClass}`;
+    requestAnimationFrame(() => requestAnimationFrame(() => blackout?.classList.remove("is-black")));
+    await wait(100);
   }
 
-  function showFinalPodium() {
+  async function playCurrentVideo(participant) {
+    const video = content.querySelector(".reveal-video");
+    if (video) await loadOverallVideo(video, participant);
+  }
+
+  async function showFinalPodium() {
     const first = validTop[0];
     const second = validTop[1];
     const third = validTop[2];
     if (!first) return;
 
-    transition(`
+    await transition(`
       <div class="overall-final">
         <span class="reveal-kicker">WINKIE OSCARS 2026</span>
         <h2>Ons algehele top 3</h2>
@@ -381,57 +391,71 @@ function startReveal(top) {
         <span class="final-congratulations">✦ BAIE GELUK AAN ONS WENNERS ✦</span>
         <button class="button button-primary replay-button" id="replay-overall">Speel onthulling weer ↻</button>
       </div>`, "reveal-final");
-
-    window.setTimeout(() => {
-      document.querySelector("#replay-overall")?.addEventListener("click", () => startReveal(validTop));
-    }, 650);
+    document.querySelector("#replay-overall")?.addEventListener("click", () => playOverallReveal(validTop));
   }
 
-  function showWinner(index) {
+  async function showWinner(index) {
     if (index >= winners.length) {
-      showFinalPodium();
+      await showFinalPodium();
       return;
     }
 
     const winner = winners[index];
-    const extraWait = winner.place === 1 ? 2800 : 0;
-    window.setTimeout(() => {
-      transition(winnerRevealMarkup(winner.result, winner.place, "intro"), `reveal-intro reveal-place-${winner.place}`, winner.result);
-      window.setTimeout(() => {
-        transition(winnerRevealMarkup(winner.result, winner.place, "podium"), `reveal-podium reveal-place-${winner.place}`, winner.result);
-        window.setTimeout(() => showWinner(index + 1), winner.podiumWait);
-      }, winner.videoWait);
-    }, extraWait);
+    if (winner.place === 1) await wait(2800);
+
+    await transition(winnerRevealMarkup(winner.result, winner.place, "intro"), `reveal-intro reveal-place-${winner.place}`);
+    await playCurrentVideo(winner.result.participant);
+
+    await transition(winnerRevealMarkup(winner.result, winner.place, "podium"), `reveal-podium reveal-place-${winner.place}`);
+    await playCurrentVideo(winner.result.participant);
+
+    await wait(winner.podiumWait);
+    await showWinner(index + 1);
   }
 
-  transition(`
+  await transition(`
     <span class="reveal-kicker">WINKIE OSCARS 2026</span>
     <h2>Lights out.</h2>
     <p>Die oomblik waarvoor almal gewag het...</p>
     <span class="reveal-icon">✦</span>`, "reveal-black-screen");
-  window.setTimeout(() => showWinner(0), 2600);
+  await wait(2600);
+  await showWinner(0);
 }
 async function loadOverallVideo(video, participant) {
-  if (!video) return;
+  if (!video || !participant) return;
   const asset = participantVideoAsset(participant);
-  try {
-    const response = await fetch(asset.source, { method: "HEAD" });
-    if (!response.ok || !video.isConnected) return;
+  const placeholder = video.nextElementSibling;
+  video.pause();
+  video.hidden = true;
+  if (placeholder) placeholder.hidden = false;
+
+  return new Promise((resolve) => {
+    let completed = false;
+    const finish = () => {
+      if (completed) return;
+      completed = true;
+      window.clearTimeout(fallback);
+      resolve();
+    };
+    const fallback = window.setTimeout(finish, 30000);
+
     video.addEventListener("loadeddata", () => {
-      if (!video.isConnected) return;
+      if (completed || !video.isConnected) return;
       video.hidden = false;
-      video.nextElementSibling.hidden = true;
-      video.play().catch((error) => console.warn("Winner video autoplay was blocked by the browser.", error));
+      if (placeholder) placeholder.hidden = true;
+      video.play().catch((error) => console.warn("Winner video autoplay was blocked by the browser; use the player controls.", error));
     }, { once: true });
+    video.addEventListener("ended", finish, { once: true });
     video.addEventListener("error", () => {
       video.hidden = true;
-      if (video.nextElementSibling) video.nextElementSibling.hidden = false;
+      if (placeholder) placeholder.hidden = false;
+      console.warn(`Could not load ${asset.filename}; showing the video placeholder.`);
+      finish();
     }, { once: true });
+
     video.src = asset.source;
     video.load();
-  } catch (error) {
-    console.warn(`Could not check for ${asset.filename}. Showing the video placeholder.`, error);
-  }
+  });
 }
 
 async function rankingPage() {
