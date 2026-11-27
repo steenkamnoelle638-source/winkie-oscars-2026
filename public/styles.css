@@ -47,35 +47,13 @@
 
 
 
-/* Overall-winner curtain: dense velvet folds part from the center and gather at the wings. */
+/* The user's transparent WebM is the sole overall-winner curtain overlay. */
 html,body { overflow-x:clip; }
 .app-shell { overflow:visible; }
 .reveal-stage { overflow:visible; z-index:1; isolation:isolate; border:0; border-radius:0; background:#050506; }
 .reveal-stage.reveal-1,.reveal-stage.reveal-2,.reveal-stage.reveal-3 { background:radial-gradient(ellipse at 50% 52%,rgba(215,176,106,.11),transparent 38rem),#090808; }
-.reveal-stage::before,.reveal-stage::after {
-  content:""; position:absolute; z-index:2; top:0; bottom:-2px; width:64%; pointer-events:none;
-  background:
-    linear-gradient(180deg,rgba(255,190,170,.16),transparent 18%,rgba(16,0,4,.20) 72%,rgba(0,0,0,.4)),
-    repeating-linear-gradient(90deg,#37050d 0 5%,#771421 7%,#b53b46 12%,#67101b 18%,#a82b38 24%,#4b0913 31%,#9d2633 38%,#520a15 45%,#ad303b 52%,#64101b 60%,#94202e 68%,#410710 77%,#86202d 86%,#36050c 95%);
-  box-shadow:inset 10px 0 23px rgba(255,180,160,.1),inset -22px 0 35px rgba(0,0,0,.58),0 18px 22px rgba(0,0,0,.34);
-  filter:drop-shadow(0 8px 9px rgba(0,0,0,.38));
-  transition:transform 1.8s cubic-bezier(.45,.04,.18,1),filter 1.8s ease;
-  will-change:transform;
-}
-.reveal-stage::before {
-  left:0; transform-origin:left center; transform:translateX(0) scaleX(1);
-  clip-path:polygon(0 0,100% 0,99% 7%,96% 14%,92% 21%,88% 29%,84% 37%,81% 44%,80% 51%,82% 59%,86% 67%,91% 75%,96% 83%,99% 91%,100% 100%,0 100%);
-}
-.reveal-stage::after {
-  right:0; transform-origin:right center; transform:translateX(0) scaleX(1);
-  background:
-    linear-gradient(180deg,rgba(255,190,170,.16),transparent 18%,rgba(16,0,4,.20) 72%,rgba(0,0,0,.4)),
-    repeating-linear-gradient(270deg,#37050d 0 5%,#771421 7%,#b53b46 12%,#67101b 18%,#a82b38 24%,#4b0913 31%,#9d2633 38%,#520a15 45%,#ad303b 52%,#64101b 60%,#94202e 68%,#410710 77%,#86202d 86%,#36050c 95%);
-  clip-path:polygon(100% 0,0 0,1% 7%,4% 14%,8% 21%,12% 29%,16% 37%,19% 44%,20% 51%,18% 59%,14% 67%,9% 75%,4% 83%,1% 91%,0 100%,100% 100%);
-}
-/* Gather past the stage block so the velvet sits at the screen edges when open. */
-.reveal-stage.curtains-open::before { transform:translateX(-34%) scaleX(.48); }
-.reveal-stage.curtains-open::after { transform:translateX(34%) scaleX(.48); }
+.curtain-overlay-video { position:absolute; z-index:2; top:0; left:0; display:block; width:100%; height:100%; object-fit:fill; pointer-events:none; transition:width 1.9s cubic-bezier(.45,.04,.18,1),left 1.9s cubic-bezier(.45,.04,.18,1); }
+.reveal-stage.curtains-open .curtain-overlay-video { left:-8%; width:116%; }
 .stage-spotlights { position:absolute; z-index:3; inset:0; overflow:hidden; opacity:0; pointer-events:none; mix-blend-mode:screen; background:radial-gradient(ellipse 14% 30% at 8% 31%,rgba(255,207,139,.28),transparent 82%),radial-gradient(ellipse 16% 34% at 31% 27%,rgba(255,218,160,.24),transparent 82%),radial-gradient(ellipse 15% 31% at 51% 29%,rgba(255,198,125,.26),transparent 82%),radial-gradient(ellipse 16% 34% at 72% 28%,rgba(255,218,160,.24),transparent 82%),radial-gradient(ellipse 14% 30% at 93% 31%,rgba(255,207,139,.28),transparent 82%); transition:opacity .55s ease; }
 .reveal-blackout { position:absolute; z-index:6; inset:0; background:#000; opacity:0; pointer-events:none; transition:opacity .6s ease; }
 .reveal-blackout.is-black { opacity:1; }
@@ -87,17 +65,10 @@ html,body { overflow-x:clip; }
 .stage-spotlights i:nth-child(5){right:-3%;transform:rotate(15deg)}
 .reveal-stage.spotlights-on:not(.curtains-open) .stage-spotlights { opacity:.9; }
 .reveal-stage.curtains-open .stage-spotlights { opacity:0; transition-delay:.2s; }
-.curtain-valance { z-index:4; top:-2px; left:-5%; width:110%; height:86px; border:0; background:transparent; clip-path:none; filter:drop-shadow(0 11px 9px rgba(0,0,0,.52)); }
-.curtain-valance svg { display:block; width:100%; height:100%; overflow:visible; }
-.curtain-valance .swag-shape { fill:url(#swag-velvet); }
-/* Keep winner text inside the open center, especially on narrow phones. */
-.reveal-content { z-index:5; width:min(100% - 32px,760px); }
+.reveal-content { z-index:1; width:min(100% - 32px,760px); }
 .reveal-person { display:block; width:100%; margin:25px auto 0; text-align:center; }
 .reveal-person h2 { margin:7px 0; font-size:clamp(30px,7vw,86px); overflow-wrap:anywhere; }
-
-@media(max-width:980px){.category-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media(max-width:620px){.category-grid{grid-template-columns:1fr;}.category-card{min-height:190px;}.question-recap-list{grid-template-columns:1fr;}.reveal-award-heading{align-items:flex-start;}.category-reveal-footer{align-items:flex-start;flex-direction:column;}.category-podium-panel .small-podium{gap:4px;padding-left:0;padding-right:0}.category-podium-panel .podium-spot{min-width:83px}}
-@media(prefers-reduced-motion:reduce){.category-reveal-panel,.category-progress i b{animation:none;transition:none}.category-reveal-panel.is-fading{opacity:1;transform:none}}
+.reveal-bottom { z-index:1; }
 
 .reveal-stage.reveal-video-mode { min-height:560px; padding:36px 0 50px; }
 .reveal-content { width:min(100% - 32px,820px); }
@@ -114,111 +85,3 @@ html,body { overflow-x:clip; }
 .reveal-video-mode .reveal-person { margin-top:14px; }
 @media(max-width:620px){.reveal-stage.reveal-video-mode{min-height:450px;padding:30px 0 48px}.reveal-video-frame{margin-top:13px}.video-placeholder{min-height:178px;gap:8px;padding:13px}.video-placeholder strong{font-size:clamp(27px,9vw,38px)}.video-placeholder code{font-size:8px}.reveal-video-mode .reveal-person{margin-top:12px}.reveal-video-mode .reveal-person h2{font-size:clamp(28px,9vw,42px)}}
 @media(prefers-reduced-motion:reduce){.video-placeholder::before{animation:none}}
-
-
-/* =========================================
-   WINKIE OSCARS 2026
-   RED VELVET THEATER CURTAIN OVERLAY
-   Adapted to keep the stage overflow and video reveal behavior intact.
-   ========================================= */
-.reveal-stage {
-    position: relative;
-    overflow: visible;
-    isolation: isolate;
-    background: #050303;
-}
-
-.reveal-stage::before,
-.reveal-stage::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 52%;
-    z-index: 2;
-    pointer-events: none;
-    background:
-        linear-gradient(180deg, rgba(255, 160, 150, .24), transparent 18%, rgba(0, 0, 0, .12) 65%, rgba(0, 0, 0, .48)),
-        repeating-linear-gradient(90deg, #39030a 0%, #650811 4%, #a51c29 8%, #d13c45 11%, #78101c 15%, #36030a 19%, #a91d2a 24%, #e04b50 27%, #74101b 32%, #39030a 37%);
-    background-size: 100% 100%, 100% 100%;
-    box-shadow: inset 12px 0 22px rgba(255, 160, 150, .12), inset -18px 0 30px rgba(0, 0, 0, .55), 0 8px 20px rgba(0, 0, 0, .4);
-    filter: drop-shadow(0 5px 8px rgba(0, 0, 0, .45));
-    transition: transform 1.9s cubic-bezier(.55, .02, .25, 1), clip-path 1.9s cubic-bezier(.55, .02, .25, 1);
-    will-change: transform, clip-path;
-}
-
-.reveal-stage::before {
-    left: 0;
-    transform-origin: left center;
-    transform: translateX(0) scaleX(1);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-}
-
-.reveal-stage::after {
-    right: 0;
-    transform-origin: right center;
-    transform: translateX(0) scaleX(1);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    background:
-        linear-gradient(180deg, rgba(255, 160, 150, .24), transparent 18%, rgba(0, 0, 0, .12) 65%, rgba(0, 0, 0, .48)),
-        repeating-linear-gradient(270deg, #39030a 0%, #650811 4%, #a51c29 8%, #d13c45 11%, #78101c 15%, #36030a 19%, #a91d2a 24%, #e04b50 27%, #74101b 32%, #39030a 37%);
-}
-
-/* The opening draws the velvet beyond the stage block without covering the video. */
-.reveal-stage.curtains-open::before {
-    transform: translateX(-34%) scaleX(.48);
-    clip-path: polygon(0 0, 100% 0, 92% 17%, 73% 34%, 52% 46%, 43% 51%, 54% 57%, 78% 73%, 100% 100%, 0 100%);
-}
-
-.reveal-stage.curtains-open::after {
-    transform: translateX(34%) scaleX(.48);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 22% 73%, 46% 57%, 57% 51%, 48% 46%, 27% 34%, 8% 17%);
-}
-
-.curtain-valance {
-    position: absolute;
-    z-index: 4;
-    top: -2px;
-    left: -5%;
-    width: 110%;
-    height: 88px;
-    overflow: hidden;
-    background: transparent;
-    filter: drop-shadow(0 9px 9px rgba(0, 0, 0, .65));
-}
-
-.curtain-valance svg { display: none; }
-
-.curtain-valance::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse 115px 72px at 50% 0%, #4a0309 0%, #8d101c 52%, #c12b37 69%, transparent 72%) 0 0 / 230px 88px repeat-x;
-    filter: drop-shadow(0 5px 5px rgba(0, 0, 0, .55));
-}
-
-.curtain-valance::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(180deg, transparent 0 12px, rgba(30, 0, 4, .45) 14px, rgba(255, 115, 110, .18) 17px, transparent 22px);
-    opacity: .8;
-    pointer-events: none;
-}
-
-/* Keep winner content behind closed curtains, then reveal it through the open center. */
-.reveal-content { position: relative; z-index: 1; }
-.stage-spotlights { z-index: 3; }
-.reveal-blackout { z-index: 6; }
-
-@media (max-width: 620px) {
-    .curtain-valance { height: 65px; }
-    .curtain-valance::before { background-size: 170px 65px; }
-    .reveal-stage::before,
-    .reveal-stage::after { width: 54%; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .reveal-stage::before,
-    .reveal-stage::after { transition: none; }
-}
